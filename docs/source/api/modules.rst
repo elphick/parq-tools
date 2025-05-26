@@ -1,13 +1,13 @@
 API Reference
 =============
 
-.. automodule:: namespace.package
+.. automodule:: parq_tools
    :members:
 
 .. autosummary::
    :toctree: _autosummary
    :recursive:
 
-    module
+    parq_concat
 
 

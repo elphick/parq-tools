@@ -14,11 +14,15 @@ from plotly.io._sg_scraper import plotly_sg_scraper
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../..'))
 
+import parq_tools
+
 # -- Project information -----------------------------------------------------
 
-project = 'elphick-template'
-copyright = '2023, Greg Elphick'
+project = 'parq-tools'
+copyright = '2025, Greg Elphick'
 author = 'Greg Elphick'
+version = parq_tools.__version__
+
 
 # -- General configuration ---------------------------------------------------
 
