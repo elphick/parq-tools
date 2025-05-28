@@ -121,6 +121,34 @@ class ParquetConcat:
         # Include index columns in the final list
         return self.index_columns + [col for col in columns if col in schema.names]
 
+    def _validate_index_alignment(self, datasets: List[ds.Dataset]) -> None:
+        """
+        Validates that the index columns are aligned across all datasets.
+
+        Args:
+            datasets (List[ds.Dataset]): List of datasets to validate.
+
+        Raises:
+            ValueError: If index columns are not aligned across datasets.
+        """
+        logging.info("Validating index alignment across datasets")
+        index_columns = self.index_columns
+
+        # Extract index column values for each dataset
+        index_values = []
+        for dataset in datasets:
+            scanner = dataset.scanner(columns=index_columns, batch_size=1)
+            values = []
+            for batch in scanner.to_batches():
+                table = pa.Table.from_batches([batch])
+                values.extend(table.select(index_columns).to_pandas().values.tolist())
+            index_values.append(values)
+
+        # Compare index values across datasets
+        for i in range(1, len(index_values)):
+            if index_values[i] != index_values[0]:
+                raise ValueError("Index columns are not aligned across datasets.")
+
     def concat_to_file(self, output_path: Path, filter_query: Optional[str] = None,
                        columns: Optional[List[str]] = None, use_non_chunked_concat: bool = False,
                        batch_size: int = 1024) -> None:
@@ -198,6 +226,7 @@ class ParquetConcat:
 
         # Create a unified schema that includes all columns from all datasets
         unified_schema = pa.unify_schemas(schemas)
+        logging.debug("Unified schema: %s", unified_schema)
 
         if self.axis == 1:  # Wide concatenation
             self._concat_wide(datasets, unified_schema, output_path, columns, filter_query)
@@ -208,50 +237,63 @@ class ParquetConcat:
                      columns: Optional[List[str]], filter_query: Optional[str]) -> None:
         """
         Handles wide concatenation (axis=1) in a memory-efficient manner by processing data in batches.
-
-        Args:
-            datasets (List[ds.Dataset]): List of datasets to concatenate.
-            unified_schema (pa.Schema): Unified schema for all datasets.
-            output_path (Path): Destination path for the output Parquet file.
-            columns (Optional[List[str]]): List of columns to include in the output.
-            filter_query (Optional[str]): Filter expression to apply.
         """
         logging.info("Starting wide concatenation with batch processing")
+
+        # self._validate_rowgroup_alignment(datasets)
+        self._validate_index_alignment(datasets)
+
         writer = None
 
         try:
-            # Create scanners for all datasets with column-level filtering
+            # Create iterators for all dataset scanners
             scanners = [
-                dataset.scanner(
+                iter(dataset.scanner(
                     columns=[col for col in columns if col in dataset.schema.names],
                     batch_size=1024  # Adjust batch size as needed
-                )
+                ).to_batches())
                 for dataset in datasets
             ]
 
             while True:
-                # Collect the next batch from each scanner
                 aligned_batches = []
-                all_exhausted = True  # Track if all scanners are exhausted
+                all_exhausted = True
 
                 for scanner in scanners:
                     try:
-                        batch = next(scanner.to_batches())
+                        batch = next(scanner)
                         table = pa.Table.from_batches([batch])
-
-                        # Align the table to the unified schema
-                        table = self._align_schema(table, unified_schema)
+                        if table.column_names == self.index_columns:
+                            # If the table only contains index columns, skip it
+                            continue
                         aligned_batches.append(table)
-                        all_exhausted = False  # At least one scanner is not exhausted
+                        all_exhausted = False
                     except StopIteration:
                         aligned_batches.append(None)
 
-                # Stop if all scanners are exhausted
                 if all_exhausted:
                     break
 
-                # Combine the aligned batches horizontally
-                combined_table = self.combine_tables_horizontally([batch for batch in aligned_batches if batch])
+                # Merge tables horizontally by combining their columns
+                combined_table = pa.Table.from_arrays(
+                    [column for i, table in enumerate(aligned_batches) if table for column in (
+                        table.columns if i == 0 else [col for col in table.columns if table.schema.field(
+                            table.schema.get_field_index(table.schema.names[table.columns.index(col)])).name not in {
+                                                          "x", "y", "z"}]
+                    )],
+                    schema=pa.schema(
+                        [field for i, table in enumerate(aligned_batches) if table for field in (
+                            table.schema if i == 0 else [field for field in table.schema if
+                                                         field.name not in {"x", "y", "z"}]
+                        )]
+                    )
+                )
+
+                # Adjust the unified schema to include only the filtered columns
+                filtered_schema_fields = [field for field in unified_schema if
+                                          field.name in (self.index_columns + (columns or []))]
+                filtered_schema = pa.schema(filtered_schema_fields)
+                combined_table = self._align_schema(combined_table, filtered_schema)
 
                 # Apply row-level filtering to the combined table
                 if filter_query:
@@ -267,7 +309,6 @@ class ParquetConcat:
             if writer:
                 writer.close()
         logging.info("Wide concatenation completed and saved to: %s", output_path)
-
 
     def _concat_tall(self, datasets: List[ds.Dataset], unified_schema: pa.Schema, output_path: Path,
                      columns: Optional[List[str]], filter_query: Optional[str], batch_size: int) -> None:
@@ -331,6 +372,38 @@ class ParquetConcat:
         finally:
             if writer:
                 writer.close()
+
+    def _validate_rowgroup_alignment(self, datasets: List[ds.Dataset]) -> None:
+        """
+        Validates that row groups are aligned across datasets using row group statistics.
+
+        Args:
+            datasets (List[ds.Dataset]): List of datasets to validate.
+
+        Raises:
+            ValueError: If row groups are not aligned across datasets.
+        """
+        logging.info("Validating row group alignment across datasets")
+        index_columns = self.index_columns
+
+        # Extract row group statistics for each dataset
+        rowgroup_stats = []
+        for dataset in datasets:
+            stats = []
+            for fragment in dataset.get_fragments():
+                metadata = fragment.metadata
+                for row_group_idx in range(metadata.num_row_groups):
+                    row_group = metadata.row_group(row_group_idx)
+                    stats.append({
+                        col: (row_group.column(col_idx).statistics.min, row_group.column(col_idx).statistics.max)
+                        for col_idx, col in enumerate(index_columns)
+                    })
+            rowgroup_stats.append(stats)
+
+        # Compare row group statistics across datasets
+        for i in range(1, len(rowgroup_stats)):
+            if rowgroup_stats[i] != rowgroup_stats[0]:
+                raise ValueError("Row groups are not aligned across datasets based on index column statistics.")
 
     def _process_chunk(self, table: pa.Table, filter_query: Optional[str],
                        columns: Optional[List[str]]) -> pa.Table:
@@ -397,7 +470,8 @@ class ParquetConcat:
         combined_schema = pa.schema([(column, aligned_tables[0].schema.field(column).type) for column in columns])
         return pa.Table.from_arrays(combined_columns, schema=combined_schema)
 
-    def _align_schema(self, table: pa.Table, unified_schema: pa.Schema) -> pa.Table:
+    @staticmethod
+    def _align_schema(table: pa.Table, unified_schema: pa.Schema) -> pa.Table:
         """
         Aligns the schema of a table with the unified schema by adding missing columns with null values.
 
@@ -408,10 +482,13 @@ class ParquetConcat:
         Returns:
             pa.Table: The aligned table.
         """
+        # Add missing columns with null values
         for field in unified_schema:
             if field.name not in table.schema.names:
                 null_array = pa.array([None] * len(table), type=field.type)
                 table = table.append_column(field.name, null_array)
+
+        # Reorder columns to match the unified schema
         reordered_columns = [table[field.name] for field in unified_schema]
         return pa.Table.from_arrays(reordered_columns, schema=unified_schema)
 
@@ -508,24 +585,6 @@ class ParquetConcat:
         combined_schema = pa.schema([(column, aligned_tables[0].schema.field(column).type) for column in columns])
         return pa.Table.from_arrays(combined_columns, schema=combined_schema)
 
-    def _align_schema(self, table: pa.Table, unified_schema: pa.Schema) -> pa.Table:
-        """
-        Aligns the schema of a table with the unified schema by adding missing columns with null values.
-
-        Args:
-            table (pa.Table): The table to align.
-            unified_schema (pa.Schema): The unified schema to align with.
-
-        Returns:
-            pa.Table: The aligned table.
-        """
-        for field in unified_schema:
-            if field.name not in table.schema.names:
-                null_array = pa.array([None] * len(table), type=field.type)
-                table = table.append_column(field.name, null_array)
-        reordered_columns = [table[field.name] for field in unified_schema]
-        return pa.Table.from_arrays(reordered_columns, schema=unified_schema)
-
     @staticmethod
     def _validate_filter(filter_query: Optional[str], schema: pa.Schema) -> None:
         """
@@ -556,7 +615,16 @@ class ParquetConcat:
             raise ValueError(f"Malformed filter expression: {filter_query}\nError: {e}")
 
     @staticmethod
-    def combine_tables_horizontally(tables):
+    def _combine_tables_vertically(tables):
+        """
+            Combines aligned tables vertically (row-wise).
+
+            Args:
+                tables (List[pa.Table]): List of aligned tables to combine.
+
+            Returns:
+                pa.Table: A single table with all input tables concatenated vertically.
+            """
         # Validate alignment of index columns
         index_columns = ["x", "y", "z"]
         index_tables = [table.select(index_columns) for table in tables]
@@ -564,7 +632,7 @@ class ParquetConcat:
             if not index_tables[0].equals(index_tables[i]):
                 raise ValueError("Index columns are not aligned across datasets")
 
-        # Combine tables horizontally
+        # Combine tables vertically
         combined_columns = []
         combined_schema_fields = []
 
