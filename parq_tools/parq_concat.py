@@ -23,39 +23,32 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 class ParquetConcat:
     """
     A utility for concatenating Parquet files while supporting axis-based merging, filtering,
-    optional strict index enforcement, and progress tracking.
+    and progress tracking.
 
     Attributes:
         files (List[str]): List of input Parquet file paths.
         axis (int): Axis along which to concatenate (0 for row-wise, 1 for column-wise).
-        strict (bool): If True, enforces strict index column alignment.
         index_columns (Optional[List[str]]): List of index columns for row-wise sorting after concatenation.
         show_progress (bool): If True, displays a progress bar using `tqdm` (if installed).
     """
 
-    def __init__(self, files: List[Path], axis: int = 0, filter_query: Optional[str] = None,
-                 strict: bool = False, index_columns: Optional[List[str]] = None, show_progress: bool = False) -> None:
+    def __init__(self, files: List[Path], axis: int = 0,
+                 index_columns: Optional[List[str]] = None, show_progress: bool = False) -> None:
         """
         Initializes ParquetConcat with specified parameters.
 
         Args:
             files (List[Path]): List of Parquet files to concatenate.
             axis (int, optional): Concatenation axis (0 = row-wise, 1 = column-wise). Defaults to 0.
-            strict (bool, optional): Enforce strict index column alignment. Defaults to False.
             index_columns (Optional[List[str]], optional): Index columns for sorting. Defaults to None.
             show_progress (bool, optional): If True, enables tqdm progress bar (if installed). Defaults to False.
-
-        Raises:
-            ValueError: If the filter expression is invalid.
         """
         if not files:
             raise ValueError("The list of input files cannot be empty.")
         self.files = files
         self.axis = axis
-        self.strict = strict
         self.index_columns = index_columns or []
         self.show_progress = show_progress and HAS_TQDM  # Only enable progress if tqdm is available
-        self._parser = get_filter_parser()  # Initialize the parser
         logging.info("Initializing ParquetConcat with %d files", len(files))
         self._validate_input_files()
 
@@ -129,36 +122,46 @@ class ParquetConcat:
         return self.index_columns + [col for col in columns if col in schema.names]
 
     def concat_to_file(self, output_path: Path, filter_query: Optional[str] = None,
-                       columns: Optional[List[str]] = None, use_pyarrow_concat: bool = False,
+                       columns: Optional[List[str]] = None, use_non_chunked_concat: bool = False,
                        batch_size: int = 1024) -> None:
         """
         Concatenates input Parquet files and writes the result to a file.
 
         Args:
             output_path (Path): Destination path for the output Parquet file.
-            filter_query (Optional[str]): Pandas-style filter expression to apply.
+            filter_query (Optional[str]): Filter expression to apply.
             columns (Optional[List[str]]): List of columns to include in the output.
-            use_pyarrow_concat (bool, optional): If True, uses PyArrow's built-in concat methods. Defaults to False.
+            use_non_chunked_concat (bool, optional): If True, uses non-chunked concat methods. Defaults to False.
             batch_size (int, optional): Number of rows per batch to process. Defaults to 1024.
-
-        Raises:
-            ValueError: If schemas or chunk sizes are inconsistent across files.
         """
-        if use_pyarrow_concat:
-            self._concat_with_pyarrow(output_path, filter_query, columns)
+        # Ensure index columns are always included at the front
+        if columns is None:
+            datasets = [ds.dataset(file, format="parquet") for file in self.files]
+            all_columns = []
+            for dataset in datasets:
+                for column in dataset.schema.names:
+                    if column not in all_columns:
+                        all_columns.append(column)
+            columns = all_columns
+        else:
+            # Prepend index columns to the user-specified columns, avoiding duplicates
+            columns = self.index_columns + [col for col in columns if col not in self.index_columns]
+
+        if use_non_chunked_concat:
+            self._concat_non_chunked(output_path, filter_query, columns)
         else:
             self._concat_iteratively(output_path, filter_query, columns, batch_size)
 
-    def _concat_with_pyarrow(self, output_path: Path, filter_query: Optional[str], columns: Optional[List[str]]) -> None:
+    def _concat_non_chunked(self, output_path: Path, filter_query: Optional[str], columns: Optional[List[str]]) -> None:
         """
-        Concatenates files using PyArrow's built-in concat methods.
+        Concatenates files using non-chunked methods.
 
         Args:
             output_path (Path): Destination path for the output Parquet file.
-            filter_query (Optional[str]): Pandas-style filter expression to apply.
+            filter_query (Optional[str]): Filter expression to apply.
             columns (Optional[List[str]]): List of columns to include in the output.
         """
-        logging.info("Using PyArrow's built-in concat methods")
+        logging.info("Using non-chunked concat methods")
         tables = []
 
         for file in self.files:
@@ -172,14 +175,11 @@ class ParquetConcat:
             table = pa.Table.from_batches(scanner.to_batches())
             tables.append(table)
 
-        if self.axis == 1:
-            result_table = pa.concat_tables(tables, promote=True)
-        else:
-            result_table = pa.concat_tables(tables)
+        result_table = pa.concat_tables(tables, promote=True) if self.axis == 1 else pa.concat_tables(tables)
 
         # Write the final table to the output file
         pq.write_table(result_table, output_path)
-        logging.info("PyArrow concat completed and saved to: %s", output_path)
+        logging.info("Non-chunked concat completed and saved to: %s", output_path)
 
     def _concat_iteratively(self, output_path: Path, filter_query: Optional[str], columns: Optional[List[str]],
                             batch_size: int) -> None:
@@ -188,7 +188,7 @@ class ParquetConcat:
 
         Args:
             output_path (Path): Destination path for the output Parquet file.
-            filter_query (Optional[str]): Pandas-style filter expression to apply.
+            filter_query (Optional[str]): Filter expression to apply.
             columns (Optional[List[str]]): List of columns to include in the output.
             batch_size (int): Number of rows per batch to process.
         """
@@ -196,125 +196,206 @@ class ParquetConcat:
         datasets = [ds.dataset(file, format="parquet") for file in self.files]
         schemas = [dataset.schema for dataset in datasets]
 
-        # Validate schemas for wide or tall concatenation
-        if self.axis == 1:
-            self._validate_wide(schemas)
+        # Create a unified schema that includes all columns from all datasets
         unified_schema = pa.unify_schemas(schemas)
 
+        if self.axis == 1:  # Wide concatenation
+            self._concat_wide(datasets, unified_schema, output_path, columns, filter_query)
+        else:  # Tall concatenation
+            self._concat_tall(datasets, unified_schema, output_path, columns, filter_query, batch_size)
+
+    def _concat_wide(self, datasets: List[ds.Dataset], unified_schema: pa.Schema, output_path: Path,
+                     columns: Optional[List[str]], filter_query: Optional[str]) -> None:
+        """
+        Handles wide concatenation (axis=1) in a memory-efficient manner by processing data in batches.
+
+        Args:
+            datasets (List[ds.Dataset]): List of datasets to concatenate.
+            unified_schema (pa.Schema): Unified schema for all datasets.
+            output_path (Path): Destination path for the output Parquet file.
+            columns (Optional[List[str]]): List of columns to include in the output.
+            filter_query (Optional[str]): Filter expression to apply.
+        """
+        logging.info("Starting wide concatenation with batch processing")
+        writer = None
+
+        try:
+            # Create scanners for all datasets with column-level filtering
+            scanners = [
+                dataset.scanner(
+                    columns=[col for col in columns if col in dataset.schema.names],
+                    batch_size=1024  # Adjust batch size as needed
+                )
+                for dataset in datasets
+            ]
+
+            while True:
+                # Collect the next batch from each scanner
+                aligned_batches = []
+                all_exhausted = True  # Track if all scanners are exhausted
+
+                for scanner in scanners:
+                    try:
+                        batch = next(scanner.to_batches())
+                        table = pa.Table.from_batches([batch])
+
+                        # Align the table to the unified schema
+                        table = self._align_schema(table, unified_schema)
+                        aligned_batches.append(table)
+                        all_exhausted = False  # At least one scanner is not exhausted
+                    except StopIteration:
+                        aligned_batches.append(None)
+
+                # Stop if all scanners are exhausted
+                if all_exhausted:
+                    break
+
+                # Combine the aligned batches horizontally
+                combined_table = self.combine_tables_horizontally([batch for batch in aligned_batches if batch])
+
+                # Apply row-level filtering to the combined table
+                if filter_query:
+                    filter_expression = build_filter_expression(filter_query, combined_table.schema)
+                    combined_table = combined_table.filter(filter_expression)
+
+                # Write the filtered batch to the output file
+                if writer is None:
+                    writer = pq.ParquetWriter(output_path, combined_table.schema)
+                writer.write_table(combined_table)
+
+        finally:
+            if writer:
+                writer.close()
+        logging.info("Wide concatenation completed and saved to: %s", output_path)
+
+
+    def _concat_tall(self, datasets: List[ds.Dataset], unified_schema: pa.Schema, output_path: Path,
+                     columns: Optional[List[str]], filter_query: Optional[str], batch_size: int) -> None:
+        """
+        Handles tall concatenation (axis=0).
+
+        Args:
+            datasets (List[ds.Dataset]): List of datasets to concatenate.
+            unified_schema (pa.Schema): Unified schema for all datasets.
+            output_path (Path): Destination path for the output Parquet file.
+            columns (Optional[List[str]]): List of columns to include in the output.
+            filter_query (Optional[str]): Filter expression to apply.
+            batch_size (int): Number of rows per batch to process.
+        """
         writer = None
         try:
-            if self.axis == 1:  # Wide concatenation
-                # Create scanners for all datasets with filtering applied
-                scanners = [
-                    dataset.scanner(
-                        columns=self._validate_columns(dataset.schema, columns or dataset.schema.names),
-                        batch_size=batch_size,
-                        filter=build_filter_expression(filter_query, dataset.schema) if filter_query else None
-                    )
-                    for dataset in datasets
-                ]
-                batch_generators = [scanner.to_batches() for scanner in scanners]
+            # Create scanners for all datasets with index column filters
+            scanners = [
+                dataset.scanner(
+                    columns=self._validate_columns(dataset.schema, columns),
+                    filter=build_filter_expression(filter_query, dataset.schema) if filter_query else None,
+                    batch_size=batch_size
+                )
+                for dataset in datasets
+            ]
 
-                while True:
-                    # Fetch the next batch from each generator
-                    batches = [next(batch_gen, None) for batch_gen in batch_generators]
+            while True:
+                aligned_batches = []
+                for scanner in scanners:
+                    try:
+                        # Get the next batch from the scanner
+                        batch = next(scanner.to_batches())
+                        table = pa.Table.from_batches([batch])
 
-                    # Break the loop if all batches are None (end of all datasets)
-                    if all(batch is None for batch in batches):
+                        # Apply table-level filtering for non-index columns
+                        if filter_query:
+                            filter_expression = build_filter_expression(filter_query, table.schema)
+                            table = table.filter(filter_expression)
+
+                        # Align the table to the unified schema
+                        for field in unified_schema:
+                            if field.name not in table.schema.names:
+                                null_array = pa.array([None] * len(table), type=field.type)
+                                table = table.append_column(field.name, null_array)
+                        table = table.cast(unified_schema, safe=False)
+
+                        aligned_batches.append(table)
+                    except StopIteration:
+                        # Stop when no more batches are available
                         break
 
-                    # Convert non-None batches to tables
-                    tables = [pa.Table.from_batches([batch]) for batch in batches if batch is not None]
+                if not aligned_batches:
+                    break
 
-                    # Align and aggregate the tables for wide concatenation
-                    combined_table = self._align_and_aggregate_wide(tables, columns)
+                # Concatenate aligned batches vertically
+                combined_batch = pa.concat_tables(aligned_batches)
 
-                    # Write the combined table to the output file
-                    if writer is None:
-                        writer = pq.ParquetWriter(output_path, combined_table.schema)
-                    writer.write_table(combined_table)
-            else:  # Tall concatenation
-                for dataset in datasets:
-                    scanner = dataset.scanner(
-                        columns=self._validate_columns(dataset.schema, columns or dataset.schema.names),
-                        batch_size=batch_size,
-                        filter=build_filter_expression(filter_query, dataset.schema) if filter_query else None
-                    )
-                    for batch in scanner.to_batches():
-                        table = pa.Table.from_batches([batch])
-                        table = self._align_schema(table, unified_schema)
-
-                        if writer is None:
-                            writer = pq.ParquetWriter(output_path, unified_schema)
-                        writer.write_table(table)
+                if writer is None:
+                    writer = pq.ParquetWriter(output_path, combined_batch.schema)
+                writer.write_table(combined_batch)
         finally:
             if writer:
                 writer.close()
 
-    def _align_and_aggregate_wide(self, tables: List[pa.Table], columns: Optional[List[str]] = None) -> pa.Table:
+    def _process_chunk(self, table: pa.Table, filter_query: Optional[str],
+                       columns: Optional[List[str]]) -> pa.Table:
+        """
+        Processes a single chunk by applying filtering and column selection.
+
+        Args:
+            table (pa.Table): The chunk to process.
+            filter_query (Optional[str]): Filter expression to apply.
+            columns (Optional[List[str]]): List of columns to include.
+
+        Returns:
+            pa.Table: Processed chunk.
+        """
+        logging.debug("Processing chunk with schema: %s", table.schema)
+
+        # Apply filtering if a filter query is provided
+        if filter_query:
+            logging.debug("Applying filter: %s", filter_query)
+            filter_expression = build_filter_expression(filter_query, table.schema)
+            table = table.filter(filter_expression)
+
+        # Select specific columns if provided
+        if columns:
+            logging.debug("Selecting columns: %s", columns)
+            try:
+                table = table.select(columns)
+                logging.debug("Selected chunk schema: %s", table.schema)
+            except KeyError as e:
+                logging.error("Error selecting columns: %s", e)
+                raise ValueError(f"Failed to select columns: {columns}\nError: {e}")
+
+        return table
+
+    def _align_and_aggregate_wide(self, tables: List[pa.Table], columns: List[str]) -> pa.Table:
         """
         Aligns and aggregates tables horizontally by index columns for wide concatenation.
 
         Args:
             tables (List[pa.Table]): List of tables to align and aggregate.
-            columns (Optional[List[str]]): List of columns to include in the output.
+            columns (List[str]): List of columns to include in the output.
 
         Returns:
             pa.Table: Horizontally aligned and aggregated table.
         """
-        # Check for duplicate column names (excluding index columns)
-        all_column_names = [
-            name for table in tables for name in table.schema.names if name not in self.index_columns
-        ]
-        duplicate_columns = {name for name in all_column_names if all_column_names.count(name) > 1}
-
-        # Rename duplicate columns to avoid conflicts
-        renamed_tables = []
-        for i, table in enumerate(tables):
-            new_column_names = [
-                f"{name}_file{i+1}" if name in duplicate_columns else name
-                for name in table.schema.names
-            ]
-            renamed_table = table.rename_columns(new_column_names)
-            renamed_tables.append(renamed_table)
-
         # Ensure all tables have the same schema by adding missing columns with null values
-        unified_schema = pa.unify_schemas([table.schema for table in renamed_tables])
         aligned_tables = []
-        for table in renamed_tables:
-            for field in unified_schema:
-                if field.name not in table.schema.names:
-                    null_array = pa.array([None] * len(table), type=field.type)
-                    table = table.append_column(field.name, null_array)
+        for table in tables:
+            for column in columns:
+                if column not in table.schema.names:
+                    null_array = pa.array([None] * len(table))
+                    table = table.append_column(column, null_array)
             aligned_tables.append(table)
 
-        # Select index columns from the first table
-        index_table = aligned_tables[0].select(self.index_columns)
+        # Combine tables horizontally
+        combined_columns = []
+        for column in columns:
+            for table in aligned_tables:
+                if column in table.schema.names:
+                    combined_columns.append(table[column])
+                    break
 
-        # Collect unique data columns (excluding index columns)
-        data_columns = []
-        seen_columns = set(self.index_columns)  # Start with index columns to avoid duplicates
-        for table in aligned_tables:
-            for column_name, column_array in zip(table.schema.names, table.columns):
-                if column_name not in seen_columns:
-                    data_columns.append((column_name, column_array))
-                    seen_columns.add(column_name)
-
-        # Combine index columns and unique data columns
-        combined_arrays = index_table.columns + [array for _, array in data_columns]
-
-        # If columns are explicitly specified, filter the final output
-        if columns:
-            final_columns = self.index_columns + columns
-            combined_schema = pa.schema([field for field in unified_schema if field.name in final_columns])
-            combined_arrays = [array for array, field in zip(combined_arrays, unified_schema) if field.name in final_columns]
-        else:
-            combined_schema = pa.schema(
-                list(index_table.schema) +
-                [pa.field(name, array.type) for name, array in data_columns]
-            )
-
-        return pa.Table.from_arrays(combined_arrays, schema=combined_schema)
+        # Create the combined table
+        combined_schema = pa.schema([(column, aligned_tables[0].schema.field(column).type) for column in columns])
+        return pa.Table.from_arrays(combined_columns, schema=combined_schema)
 
     def _align_schema(self, table: pa.Table, unified_schema: pa.Schema) -> pa.Table:
         """
@@ -334,39 +415,13 @@ class ParquetConcat:
         reordered_columns = [table[field.name] for field in unified_schema]
         return pa.Table.from_arrays(reordered_columns, schema=unified_schema)
 
-    def _process_chunk(self, table: pa.Table, filter_query: Optional[str], columns: Optional[List[str]]) -> pa.Table:
-        """
-        Processes a single chunk by applying column selection.
-
-        Args:
-            table (pa.Table): The chunk to process.
-            filter_query (Optional[str]): Pandas-style filter expression (no longer used here).
-            columns (Optional[List[str]]): List of columns to include.
-
-        Returns:
-            pa.Table: Processed chunk.
-        """
-        logging.debug("Processing chunk with schema: %s", table.schema)
-
-        # Select specific columns if provided
-        if columns:
-            logging.debug("Selecting columns: %s", columns)
-            try:
-                table = table.select(columns)
-                logging.debug("Selected chunk schema: %s", table.schema)
-            except KeyError as e:
-                logging.error("Error selecting columns: %s", e)
-                raise ValueError(f"Failed to select columns: {columns}\nError: {e}")
-
-        return table
-
     @staticmethod
     def _validate_filter(filter_query: Optional[str], schema: pa.Schema) -> None:
         """
         Validates the filter query against the table schema.
 
         Args:
-            filter_query (Optional[str]): Pandas-style filter expression.
+            filter_query (Optional[str]): Filter expression.
             schema (pa.Schema): Schema of the table to validate against.
 
         Raises:
@@ -388,3 +443,154 @@ class ParquetConcat:
         except Exception as e:
             logging.error("Malformed filter expression: %s", filter_query)
             raise ValueError(f"Malformed filter expression: {filter_query}\nError: {e}")
+
+    def _process_chunk(self, table: pa.Table, filter_query: Optional[str], columns: Optional[List[str]]) -> pa.Table:
+        """
+        Processes a single chunk by applying filtering and column selection.
+
+        Args:
+            table (pa.Table): The chunk to process.
+            filter_query (Optional[str]): Filter expression to apply.
+            columns (Optional[List[str]]): List of columns to include.
+
+        Returns:
+            pa.Table: Processed chunk.
+        """
+        logging.debug("Processing chunk with schema: %s", table.schema)
+
+        # Apply filtering if a filter query is provided
+        if filter_query:
+            logging.debug("Applying filter: %s", filter_query)
+            filter_expression = build_filter_expression(filter_query, table.schema)
+            table = table.filter(filter_expression)
+
+        # Select specific columns if provided
+        if columns:
+            logging.debug("Selecting columns: %s", columns)
+            try:
+                table = table.select(columns)
+                logging.debug("Selected chunk schema: %s", table.schema)
+            except KeyError as e:
+                logging.error("Error selecting columns: %s", e)
+                raise ValueError(f"Failed to select columns: {columns}\nError: {e}")
+
+        return table
+
+    def _align_and_aggregate_wide(self, tables: List[pa.Table], columns: List[str]) -> pa.Table:
+        """
+        Aligns and aggregates tables horizontally by index columns for wide concatenation.
+
+        Args:
+            tables (List[pa.Table]): List of tables to align and aggregate.
+            columns (List[str]): List of columns to include in the output.
+
+        Returns:
+            pa.Table: Horizontally aligned and aggregated table.
+        """
+        # Ensure all tables have the same schema by adding missing columns with null values
+        aligned_tables = []
+        for table in tables:
+            for column in columns:
+                if column not in table.schema.names:
+                    null_array = pa.array([None] * len(table))
+                    table = table.append_column(column, null_array)
+            aligned_tables.append(table)
+
+        # Combine tables horizontally
+        combined_columns = []
+        for column in columns:
+            for table in aligned_tables:
+                if column in table.schema.names:
+                    combined_columns.append(table[column])
+                    break
+
+        # Create the combined table
+        combined_schema = pa.schema([(column, aligned_tables[0].schema.field(column).type) for column in columns])
+        return pa.Table.from_arrays(combined_columns, schema=combined_schema)
+
+    def _align_schema(self, table: pa.Table, unified_schema: pa.Schema) -> pa.Table:
+        """
+        Aligns the schema of a table with the unified schema by adding missing columns with null values.
+
+        Args:
+            table (pa.Table): The table to align.
+            unified_schema (pa.Schema): The unified schema to align with.
+
+        Returns:
+            pa.Table: The aligned table.
+        """
+        for field in unified_schema:
+            if field.name not in table.schema.names:
+                null_array = pa.array([None] * len(table), type=field.type)
+                table = table.append_column(field.name, null_array)
+        reordered_columns = [table[field.name] for field in unified_schema]
+        return pa.Table.from_arrays(reordered_columns, schema=unified_schema)
+
+    @staticmethod
+    def _validate_filter(filter_query: Optional[str], schema: pa.Schema) -> None:
+        """
+        Validates the filter query against the table schema.
+
+        Args:
+            filter_query (Optional[str]): Filter expression.
+            schema (pa.Schema): Schema of the table to validate against.
+
+        Raises:
+            ValueError: If the filter expression is invalid or references non-existent columns.
+        """
+        if not filter_query:
+            return
+
+        try:
+            # Parse the filter query to ensure it's valid
+            parser = get_filter_parser()
+            parser.parse(filter_query)
+
+            # Use the get_referenced_columns function to extract referenced columns
+            referenced_columns = get_referenced_columns(filter_query)
+            missing_columns = [col for col in referenced_columns if col not in schema.names]
+            if missing_columns:
+                raise ValueError(f"Filter references non-existent columns: {missing_columns}")
+        except Exception as e:
+            logging.error("Malformed filter expression: %s", filter_query)
+            raise ValueError(f"Malformed filter expression: {filter_query}\nError: {e}")
+
+    @staticmethod
+    def combine_tables_horizontally(tables):
+        # Validate alignment of index columns
+        index_columns = ["x", "y", "z"]
+        index_tables = [table.select(index_columns) for table in tables]
+        for i in range(1, len(index_tables)):
+            if not index_tables[0].equals(index_tables[i]):
+                raise ValueError("Index columns are not aligned across datasets")
+
+        # Combine tables horizontally
+        combined_columns = []
+        combined_schema_fields = []
+
+        # Add index columns from the first table only
+        combined_columns.extend(tables[0].select(index_columns).columns)
+        combined_schema_fields.extend(tables[0].select(index_columns).schema)
+
+        # Add supplementary columns from all tables
+        for table in tables:
+            for column_name in table.schema.names:
+                if column_name not in index_columns:  # Avoid duplicating index columns
+                    combined_columns.append(table[column_name])
+                    combined_schema_fields.append(table.schema.field(column_name))
+
+        # Create the combined table
+        combined_schema = pa.schema(combined_schema_fields)
+        return pa.Table.from_arrays(combined_columns, schema=combined_schema)
+
+    @staticmethod
+    def apply_filters(table, filters):
+        """
+        Apply a list of filters to a PyArrow table.
+        :param table: The PyArrow table to filter.
+        :param filters: A list of PyArrow filter expressions.
+        :return: The filtered PyArrow table.
+        """
+        for filter_expr in filters:
+            table = table.filter(filter_expr)
+        return table

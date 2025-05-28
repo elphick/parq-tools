@@ -1,4 +1,5 @@
 import pandas as pd
+import pyarrow.dataset as ds  # Ensure this import is included
 from parq_tools.parq_concat import ParquetConcat
 
 
@@ -47,4 +48,3 @@ def test_tall_concat_with_filter(parquet_tall_file_11, parquet_tall_file_12, par
     expected_columns = ["x", "y", "z", "a", "b", "c", "d"]
     assert list(df_output.columns) == expected_columns
     assert len(df_output) == 15  # Ensure the row count matches the filter
-
