@@ -8,7 +8,7 @@ packages = [{include = "parq_tools"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
-pyarrow = ">=17.0"
+pyarrow = ">=16.0,<17.0"
 tqdm = { version = "^4.67.1", optional = true }
 ydata-profiling = { version = "^4.16.1", optional = true }
 lark = "^1.2.2"
