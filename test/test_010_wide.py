@@ -14,7 +14,7 @@ def test_wide_concat(parquet_test_file_1, parquet_test_file_2, parquet_test_file
     )
 
     # Perform wide concatenation
-    concat.concat_to_file(output_file, batch_size=5)
+    concat.concat_to_file(output_file, batch_size=5, show_progress=True)
 
     # Read the output file to verify its structure
     df_output = pd.read_parquet(output_file)

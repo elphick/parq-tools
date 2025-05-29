@@ -7,6 +7,7 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 from typing import List, Optional
 
+from parq_tools.utils import validate_index_alignment
 from parq_tools.utils.filter_parser import get_filter_parser, build_filter_expression, get_referenced_columns
 
 # Try to import tqdm, but allow execution without it
@@ -119,7 +120,7 @@ class ParquetConcat:
             logging.warning(f"Columns {missing_columns} are missing in the schema. They will be added as null columns.")
 
         # Include index columns in the final list
-        return self.index_columns + [col for col in columns if col in schema.names]
+        return list(dict.fromkeys(self.index_columns + [col for col in columns if col in schema.names]))
 
     def _validate_index_alignment(self, datasets: List[ds.Dataset]) -> None:
         """
@@ -151,7 +152,7 @@ class ParquetConcat:
 
     def concat_to_file(self, output_path: Path, filter_query: Optional[str] = None,
                        columns: Optional[List[str]] = None, use_non_chunked_concat: bool = False,
-                       batch_size: int = 1024) -> None:
+                       batch_size: int = 1024, show_progress: bool = False) -> None:
         """
         Concatenates input Parquet files and writes the result to a file.
 
@@ -161,6 +162,7 @@ class ParquetConcat:
             columns (Optional[List[str]]): List of columns to include in the output.
             use_non_chunked_concat (bool, optional): If True, uses non-chunked concat methods. Defaults to False.
             batch_size (int, optional): Number of rows per batch to process. Defaults to 1024.
+            show_progress (bool, optional): If True and use_non_chunked_concat is False, displays a progress bar using `tqdm` (if installed). Defaults to False.
         """
         # Ensure index columns are always included at the front
         if columns is None:
@@ -178,7 +180,7 @@ class ParquetConcat:
         if use_non_chunked_concat:
             self._concat_non_chunked(output_path, filter_query, columns)
         else:
-            self._concat_iteratively(output_path, filter_query, columns, batch_size)
+            self._concat_iteratively(output_path, filter_query, columns, batch_size, show_progress)
 
     def _concat_non_chunked(self, output_path: Path, filter_query: Optional[str], columns: Optional[List[str]]) -> None:
         """
@@ -210,7 +212,7 @@ class ParquetConcat:
         logging.info("Non-chunked concat completed and saved to: %s", output_path)
 
     def _concat_iteratively(self, output_path: Path, filter_query: Optional[str], columns: Optional[List[str]],
-                            batch_size: int) -> None:
+                            batch_size: int, show_progress: bool) -> None:
         """
         Concatenates files iteratively in a low-memory approach.
 
@@ -219,6 +221,7 @@ class ParquetConcat:
             filter_query (Optional[str]): Filter expression to apply.
             columns (Optional[List[str]]): List of columns to include in the output.
             batch_size (int): Number of rows per batch to process.
+            show_progress (bool): If True, displays a progress bar using `tqdm` (if installed).
         """
         logging.info("Using low-memory iterative concatenation")
         datasets = [ds.dataset(file, format="parquet") for file in self.files]
@@ -229,31 +232,39 @@ class ParquetConcat:
         logging.debug("Unified schema: %s", unified_schema)
 
         if self.axis == 1:  # Wide concatenation
-            self._concat_wide(datasets, unified_schema, output_path, columns, filter_query)
+            self._concat_wide(datasets, unified_schema, output_path, columns, filter_query, batch_size, show_progress)
         else:  # Tall concatenation
-            self._concat_tall(datasets, unified_schema, output_path, columns, filter_query, batch_size)
+            self._concat_tall(datasets, unified_schema, output_path, columns, filter_query, batch_size, show_progress)
 
     def _concat_wide(self, datasets: List[ds.Dataset], unified_schema: pa.Schema, output_path: Path,
-                     columns: Optional[List[str]], filter_query: Optional[str]) -> None:
+                     columns: Optional[List[str]], filter_query: Optional[str],
+                     batch_size: int, show_progress: bool) -> None:
         """
         Handles wide concatenation (axis=1) in a memory-efficient manner by processing data in batches.
         """
         logging.info("Starting wide concatenation with batch processing")
 
-        # self._validate_rowgroup_alignment(datasets)
-        self._validate_index_alignment(datasets)
+        validate_index_alignment(datasets, index_columns=self.index_columns)
 
         writer = None
+        progress_bar = None
 
         try:
             # Create iterators for all dataset scanners
+            # todo: reconsider index columns -> early global check or per chunk.
             scanners = [
                 iter(dataset.scanner(
                     columns=[col for col in columns if col in dataset.schema.names],
-                    batch_size=1024  # Adjust batch size as needed
+                    batch_size=batch_size
                 ).to_batches())
                 for dataset in datasets
             ]
+
+            if show_progress and HAS_TQDM:
+                total_batches = max(
+                    sum(fragment.metadata.num_row_groups for fragment in dataset.get_fragments())
+                    for dataset in datasets)
+                progress_bar = tqdm(total=total_batches, desc="Processing batches", unit="batch")
 
             while True:
                 aligned_batches = []
@@ -305,13 +316,20 @@ class ParquetConcat:
                     writer = pq.ParquetWriter(output_path, combined_table.schema)
                 writer.write_table(combined_table)
 
+                if progress_bar:
+                    progress_bar.update(1)
+
+
         finally:
             if writer:
                 writer.close()
+            if progress_bar:
+                progress_bar.close()
         logging.info("Wide concatenation completed and saved to: %s", output_path)
 
     def _concat_tall(self, datasets: List[ds.Dataset], unified_schema: pa.Schema, output_path: Path,
-                     columns: Optional[List[str]], filter_query: Optional[str], batch_size: int) -> None:
+                     columns: Optional[List[str]], filter_query: Optional[str], batch_size: int,
+                     show_progress: bool) -> None:
         """
         Handles tall concatenation (axis=0).
 
@@ -322,10 +340,19 @@ class ParquetConcat:
             columns (Optional[List[str]]): List of columns to include in the output.
             filter_query (Optional[str]): Filter expression to apply.
             batch_size (int): Number of rows per batch to process.
+            show_progress (bool): If True, displays a progress bar using `tqdm` (if installed).
         """
         writer = None
+        progress_bar = None
+
         try:
-            # Create scanners for all datasets with index column filters
+            total_row_groups = sum(
+                fragment.metadata.num_row_groups for dataset in datasets for fragment in dataset.get_fragments())
+
+            if show_progress and HAS_TQDM:
+                progress_bar = tqdm(total=total_row_groups, desc="Processing batches", unit="batch")
+
+            # Create scanners for all datasets
             scanners = [
                 dataset.scanner(
                     columns=self._validate_columns(dataset.schema, columns),
@@ -335,43 +362,30 @@ class ParquetConcat:
                 for dataset in datasets
             ]
 
-            while True:
-                aligned_batches = []
-                for scanner in scanners:
-                    try:
-                        # Get the next batch from the scanner
-                        batch = next(scanner.to_batches())
-                        table = pa.Table.from_batches([batch])
+            for scanner in scanners:
+                for batch in scanner.to_batches():
+                    table = pa.Table.from_batches([batch])
 
-                        # Apply table-level filtering for non-index columns
-                        if filter_query:
-                            filter_expression = build_filter_expression(filter_query, table.schema)
-                            table = table.filter(filter_expression)
+                    # Align the table to the unified schema
+                    for field in unified_schema:
+                        if field.name not in table.schema.names:
+                            null_array = pa.array([None] * len(table), type=field.type)
+                            table = table.append_column(field.name, null_array)
 
-                        # Align the table to the unified schema
-                        for field in unified_schema:
-                            if field.name not in table.schema.names:
-                                null_array = pa.array([None] * len(table), type=field.type)
-                                table = table.append_column(field.name, null_array)
-                        table = table.cast(unified_schema, safe=False)
+                    # Ensure schema alignment
+                    table = table.cast(unified_schema, safe=False)
 
-                        aligned_batches.append(table)
-                    except StopIteration:
-                        # Stop when no more batches are available
-                        break
-
-                if not aligned_batches:
-                    break
-
-                # Concatenate aligned batches vertically
-                combined_batch = pa.concat_tables(aligned_batches)
-
-                if writer is None:
-                    writer = pq.ParquetWriter(output_path, combined_batch.schema)
-                writer.write_table(combined_batch)
+                    # Write the batch directly
+                    if writer is None:
+                        writer = pq.ParquetWriter(output_path, table.schema)
+                    writer.write_table(table)
+                    if progress_bar:
+                        progress_bar.update(1)
         finally:
             if writer:
                 writer.close()
+            if progress_bar:
+                progress_bar.close()
 
     def _validate_rowgroup_alignment(self, datasets: List[ds.Dataset]) -> None:
         """

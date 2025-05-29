@@ -1,1 +1,2 @@
 from .filter_parser import get_filter_parser
+from .indexes import validate_index_alignment
