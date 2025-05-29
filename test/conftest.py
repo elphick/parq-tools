@@ -147,5 +147,22 @@ def parquet_tall_file_13(parquet_test_dir):
     return file_path
 
 
+@pytest.fixture(scope="session")
+def parquet_unsorted_file(parquet_test_dir):
+    # Define the dataset
+    data = {
+        "x": [3, 1, 2, 5, 4],  # Unsorted column
+        "y": [15, 11, 13, 19, 17],  # Unsorted column
+        "z": [25, 21, 23, 29, 27],  # Unsorted column
+        "h": ["val3", "val1", "val2", "val5", "val4"],  # Supplementary column
+    }
 
+    # Create a DataFrame
+    df = pd.DataFrame(data)
 
+    # Write the DataFrame to a Parquet file
+    file_path = parquet_test_dir / "unsorted_data.parquet"
+    df.to_parquet(file_path, engine="pyarrow", row_group_size=5, index=False)
+
+    # Return the path to the Parquet file
+    return file_path
