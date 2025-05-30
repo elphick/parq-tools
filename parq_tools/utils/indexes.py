@@ -5,8 +5,14 @@ import pyarrow.parquet as pq
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 import pyarrow as pa
-from typing import List
+from typing import List, Optional
 
+try:
+    from tqdm import tqdm
+
+    HAS_TQDM = True
+except ImportError:
+    HAS_TQDM = False
 
 def validate_index_alignment(datasets: List[ds.Dataset], index_columns: List[str], batch_size: int = 1024) -> None:
     """
@@ -133,3 +139,7 @@ def reindex_parquet(sparse_parquet_path: Path, new_index: pa.Table, output_path:
 
             # Write the processed chunk to the output file
             writer.write_table(reindexed_table)
+            logging.info(f"Wrote {len(batch)} rows to {output_path}")
+
+
+
