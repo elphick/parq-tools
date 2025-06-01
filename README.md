@@ -9,7 +9,7 @@
 
 ## Features
 - [x] **Filtering** → Efficiently filter large parquet files.
-- [x] **Concatenation (`ParquetConcat`)** → Combines multiple Parquet files efficiently along rows (`axis=0`) or columns (`axis=1`).
+- [x] **Concatenation** → Combines multiple Parquet files efficiently along rows (`axis=0`) or columns (`axis=1`).
 - [x] **Tokenized Filtering** → Converts **pandas-style expressions** into efficient PyArrow queries.
 - [ ] **Block Model Generation** → Creates **massive Parquet datasets** that exceed memory limits, useful for testing pipelines.
 - [ ] **Profiling Enhancements** → Improves `ydata-profiling` by profiling **specific columns incrementally**, merging results for large files.
