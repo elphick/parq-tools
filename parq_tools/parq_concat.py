@@ -7,10 +7,11 @@ import pyarrow.dataset as ds
 from typing import List, Optional
 
 from parq_tools.utils.index_utils import validate_index_alignment
+# noinspection PyProtectedMember
 from parq_tools.utils._query_parser import build_filter_expression, get_filter_parser, get_referenced_columns
 
-# Try to import tqdm, but allow execution without it
 try:
+    # noinspection PyUnresolvedReferences
     from tqdm import tqdm
 
     HAS_TQDM = True
@@ -89,21 +90,6 @@ class ParquetConcat:
         for file in self.files:
             if not Path(file).is_file():
                 raise ValueError(f"File not found or inaccessible: {file}")
-
-    def _validate_output_schema(self, output_table: pa.Table, expected_columns: List[str]) -> None:
-        """
-        Validates the schema of the output table against the expected columns.
-
-        Args:
-            output_table (pa.Table): The output table to validate.
-            expected_columns (List[str]): List of expected column names.
-
-        Raises:
-            ValueError: If the output schema does not match the expected columns.
-        """
-        actual_columns = output_table.schema.names
-        if actual_columns != expected_columns:
-            raise ValueError(f"Output schema mismatch. Expected: {expected_columns}, Got: {actual_columns}")
 
     def _validate_wide(self, schemas: List[pa.Schema]) -> None:
         """

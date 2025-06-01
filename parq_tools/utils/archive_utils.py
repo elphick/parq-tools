@@ -2,10 +2,9 @@ import zipfile
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional
-import time
 
 try:
+    # noinspection PyUnresolvedReferences
     from tqdm import tqdm
 
     HAS_TQDM = True
@@ -56,6 +55,7 @@ def extract_archive(archive_path: Path, output_dir: Path, show_progress: bool = 
 
 
 import sys
+
 
 def extract_archive_with_7zip(archive_path: Path, output_dir: Path, show_progress: bool = False):
     """
