@@ -41,7 +41,7 @@ jobs:
           poetry run sphinx-build docs/source _build
 
       - name: Deploy
-        if: github.ref_protected == true && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3
         with:
           publish_branch: gh-pages
