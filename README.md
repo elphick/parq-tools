@@ -1,29 +1,15 @@
-# elphick-template
+# parq-tools
+[![License](https://img.shields.io/github/license/Elphick/parq-tools.svg?logo=apache&logoColor=white)](https://pypi.org/project/parq-tools/)
+[![PyPI](https://img.shields.io/pypi/v/parq-tools.svg?logo=python&logoColor=white)](https://pypi.org/project/parq-tools/)
+[![Run Tests](https://github.com/Elphick/parq-tools/actions/workflows/poetry_build_and_test.yml/badge.svg?branch=main)](https://github.com/Elphick/parq-tools/actions/workflows/poetry_build_and_test.yml)
+[![Publish Docs](https://github.com/Elphick/parq-tools/actions/workflows/poetry_sphinx_docs_to_gh_pages.yml/badge.svg?branch=main)](https://github.com/Elphick/parq-tools/actions/workflows/poetry_sphinx_docs_to_gh_pages.yml)
 
-This is a template for a python package including:
+## Overview
+`parq-tools` is a collection of utilities for efficiently working with **large-scale Parquet datasets**. Designed for **scalability**, it supports **chunk-wise processing**, **metadata handling**, and **optimized workflows** for datasets too large to fit into memory.
 
-- a namespace directory (called namespace)
-- a package directory (called package)
-- tests
-- docs
-- github actions
-
-Actions to perform once you have created your repo from this template:
-
-1. Change references to elphick-template, including in the pyproject.toml file
-2. Change the namespace and package folder names and module.py filename
-3. Modify the content of the following rst pages:
-    - api/modules
-    - installation
-    - quickstart
-    - glossary
-4. Confirm the licence file and modify accordingly
-5. Consider moving matplotlib and plotly from dev dependencies to your package dependencies if you use them.
-
-One of the advantages of the template is the doc publishing onto a gh-pages branch is already configured.
-To leverage this be sure to check the "include all branches" checkbox when creating a new repository from the template.
-
-[![screenshot](https://elphick.github.io/elphick-template/_static/new_repo_from_template.png)](https://elphick.github.io/elphick-template/_static/new_repo_from_template.png)
-
-Oh, you'll likely need to set-up a github token for the docs_to_gh_pages.yml action to work.
-TODO: Confirm and add better instruction here.
+## Features
+- [x] **Filtering** → Efficiently filter large parquet files.
+- [x] **Concatenation** → Combines multiple Parquet files efficiently along rows (`axis=0`) or columns (`axis=1`).
+- [x] **Tokenized Filtering** → Converts **pandas-style expressions** into efficient PyArrow queries.
+- [ ] **Block Model Generation** → Creates **massive Parquet datasets** that exceed memory limits, useful for testing pipelines.
+- [ ] **Profiling Enhancements** → Improves `ydata-profiling` by profiling **specific columns incrementally**, merging results for large files.

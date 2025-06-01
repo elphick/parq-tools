@@ -3,6 +3,7 @@ import sys
 
 import plotly
 from plotly.io._sg_scraper import plotly_sg_scraper
+from sphinx_gallery.sorting import FileNameSortKey
 
 image_scrapers = ('matplotlib', plotly_sg_scraper,)
 
@@ -14,11 +15,15 @@ from plotly.io._sg_scraper import plotly_sg_scraper
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../..'))
 
+import parq_tools
+
 # -- Project information -----------------------------------------------------
 
-project = 'elphick-template'
-copyright = '2023, Greg Elphick'
+project = 'parq-tools'
+copyright = '2025, Greg Elphick'
 author = 'Greg Elphick'
+version = parq_tools.__version__
+
 
 # -- General configuration ---------------------------------------------------
 
@@ -40,7 +45,7 @@ sphinx_gallery_conf = {
     'ignore_pattern': r'(__init__)\.py',
     'examples_dirs': '../../examples',  # path to your example scripts
     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
-    # 'within_subsection_order': FileNameSortKey,
+    'within_subsection_order': FileNameSortKey,
     'capture_repr': ('_repr_html_', '__repr__'),
     'image_scrapers': image_scrapers
 }
