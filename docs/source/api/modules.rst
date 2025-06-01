@@ -8,6 +8,8 @@ API Reference
    :toctree: _autosummary
    :recursive:
 
+    parq_filter
     parq_concat
+    utils
 
 

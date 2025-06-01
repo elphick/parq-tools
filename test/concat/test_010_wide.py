@@ -1,4 +1,6 @@
 import pandas as pd
+import pytest
+
 from parq_tools.parq_concat import ParquetConcat
 
 
@@ -49,6 +51,7 @@ def test_wide_concat_with_row_filter(parquet_test_file_1, parquet_test_file_2, p
     assert list(df_output.columns) == expected_columns
     assert len(df_output) == 2  # Ensure the row count matches the filter
 
+
 def test_wide_concat_with_column_filter(parquet_test_file_1, parquet_test_file_2, parquet_test_file_3, tmp_path):
     # Define the output file path
     output_file = tmp_path / "wide_concat_with_column_filter_output.parquet"
@@ -74,8 +77,31 @@ def test_wide_concat_with_column_filter(parquet_test_file_1, parquet_test_file_2
     assert list(df_output.columns) == expected_columns  # Ensure column order matches selected columns
     assert len(df_output) == 10  # Ensure the row count matches the input files
 
-import pandas as pd
-from parq_tools.parq_concat import ParquetConcat
+
+def test_wide_concat_single_index_column(tmp_path):
+    # Create two Parquet files with the same single index column
+    df1 = pd.DataFrame({"id": [1, 2], "a": [10, 20]})
+    df2 = pd.DataFrame({"id": [1, 2], "b": [30, 40]})
+    f1 = tmp_path / "f1.parquet"
+    f2 = tmp_path / "f2.parquet"
+    df1.to_parquet(f1, index=False)
+    df2.to_parquet(f2, index=False)
+
+    output_file = tmp_path / "wide_concat_output.parquet"
+
+    concat = ParquetConcat(
+        files=[f1, f2],
+        axis=1,
+        index_columns=["id"]
+    )
+
+    concat.concat_to_file(output_file)
+    df = pd.read_parquet(output_file) # Read the concatenated file
+    # Verify the structure of the concatenated DataFrame
+    expected_columns = ["id", "a", "b"]
+    assert list(df.columns) == expected_columns
+
+
 
 
 def test_wide_concat_against_pandas(parquet_test_file_1, parquet_test_file_2, parquet_test_file_3, tmp_path):
@@ -97,7 +123,8 @@ def test_wide_concat_against_pandas(parquet_test_file_1, parquet_test_file_2, pa
 
     # concat with pandas
     df_pandas = pd.concat(
-        [pd.read_parquet(file).set_index(['x', 'y', 'z']) for file in [parquet_test_file_1, parquet_test_file_2, parquet_test_file_3]],
+        [pd.read_parquet(file).set_index(['x', 'y', 'z']) for file in
+         [parquet_test_file_1, parquet_test_file_2, parquet_test_file_3]],
         axis=1,
         ignore_index=False
     )

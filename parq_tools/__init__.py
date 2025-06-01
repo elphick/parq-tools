@@ -1,5 +1,5 @@
 from importlib import metadata
-from .parq_concat import ParquetConcat
+from .parq_concat import ParquetConcat, concat_parquet_files
 from .parq_filter import filter_parquet_file
 from .utils.index_utils import reindex_parquet, sort_parquet_file, validate_index_alignment
 

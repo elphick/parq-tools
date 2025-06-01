@@ -18,6 +18,7 @@ Welcome to parq-tools' documentation!
 
    usage/installation
    usage/quickstart
+   user_guide
    auto_examples/index
    glossary/*
    api/modules

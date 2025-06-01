@@ -20,6 +20,36 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
+def concat_parquet_files(
+        files: List[Path],
+        output_path: Path,
+        axis: int = 0,
+        index_columns: Optional[List[str]] = None,
+        filter_query: Optional[str] = None,
+        columns: Optional[List[str]] = None,
+        batch_size: int = 100_000,
+        show_progress: bool = False
+) -> None:
+    """
+    Concatenate multiple Parquet files into a single file, supporting both row-wise and column-wise concatenation.
+
+    Args:
+        files (List[Path]): List of input Parquet file paths.
+        output_path (Path): Path to save the concatenated Parquet file.
+        axis (int): Axis along which to concatenate (0 for row-wise, 1 for column-wise).
+        index_columns (Optional[List[str]]): List of index columns for row-wise sorting after concatenation.
+        filter_query (Optional[str]): Filter expression to apply to the concatenated data.
+        columns (Optional[List[str]]): List of columns to include in the output.
+        batch_size (int): Number of rows per batch to process. Defaults to 100_00.
+        show_progress (bool): If True, displays a progress bar using `tqdm` (if installed).
+
+    Raises:
+        ValueError: If the input files list is empty or if any file is not accessible.
+    """
+    concat = ParquetConcat(files, axis, index_columns, show_progress)
+    concat.concat_to_file(output_path, filter_query, columns, batch_size, show_progress)
+
+
 class ParquetConcat:
     """
     A utility for concatenating Parquet files while supporting axis-based merging, filtering,
@@ -121,8 +151,39 @@ class ParquetConcat:
         # Include index columns in the final list
         return list(dict.fromkeys(self.index_columns + [col for col in columns if col in schema.names]))
 
+    @staticmethod
+    def _validate_filter_columns(filter_query: Optional[str], datasets: List[ds.Dataset]) -> None:
+        """
+        Validates that all columns referenced in the filter query exist in all datasets.
+
+        Args:
+            filter_query (Optional[str]): The filter query to validate.
+            datasets (List[ds.Dataset]): List of datasets to check.
+
+        Raises:
+            ValueError: If any column in the filter query is missing in one or more datasets.
+        """
+        if not filter_query:
+            return
+
+        # Extract referenced columns from the filter query
+        referenced_columns = get_referenced_columns(filter_query)
+
+        # Check each dataset for the presence of all referenced columns
+        missing_columns = set()
+        for column in referenced_columns:
+            for dataset in datasets:
+                if column not in dataset.schema.names:
+                    missing_columns.add(column)
+                    break
+
+        if missing_columns:
+            raise ValueError(
+                f"The filter query references columns that are missing in one or more datasets: {missing_columns}"
+            )
+
     def concat_to_file(self, output_path: Path, filter_query: Optional[str] = None,
-                       columns: Optional[List[str]] = None, batch_size: int = 1024,
+                       columns: Optional[List[str]] = None, batch_size: int = 100_000,
                        show_progress: bool = False) -> None:
         """
         Concatenates input Parquet files and writes the result to a file.
@@ -203,25 +264,21 @@ class ParquetConcat:
                     break
 
                 # Merge tables horizontally by combining their columns
-                combined_table = pa.Table.from_arrays(
-                    [column for i, table in enumerate(aligned_batches) if table for column in (
-                        table.columns if i == 0 else [col for col in table.columns if table.schema.field(
-                            table.schema.get_field_index(table.schema.names[table.columns.index(col)])).name not in {
-                                                          "x", "y", "z"}]
-                    )],
-                    schema=pa.schema(
-                        [field for i, table in enumerate(aligned_batches) if table for field in (
-                            table.schema if i == 0 else [field for field in table.schema if
-                                                         field.name not in {"x", "y", "z"}]
-                        )]
-                    )
-                )
-
-                # Adjust the unified schema to include only the filtered columns
-                filtered_schema_fields = [field for field in unified_schema if
-                                          field.name in (self.index_columns + (columns or []))]
-                filtered_schema = pa.schema(filtered_schema_fields)
-                combined_table = self._align_schema(combined_table, filtered_schema)
+                combined_arrays = []
+                combined_fields = []
+                for i, table in enumerate(aligned_batches):
+                    if table is None:
+                        continue
+                    if i == 0:
+                        combined_arrays.extend(table.columns)
+                        combined_fields.extend(table.schema)
+                    else:
+                        # Exclude index columns from all but the first table
+                        for col, field in zip(table.columns, table.schema):
+                            if field.name not in self.index_columns:
+                                combined_arrays.append(col)
+                                combined_fields.append(field)
+                combined_table = pa.Table.from_arrays(combined_arrays, schema=pa.schema(combined_fields))
 
                 # Apply row-level filtering to the combined table
                 if filter_query:
@@ -271,10 +328,12 @@ class ParquetConcat:
             if show_progress and HAS_TQDM:
                 progress_bar = tqdm(total=total_row_groups, desc="Processing batches", unit="batch")
 
+            ParquetConcat._validate_filter_columns(filter_query, datasets)
+
             # Create scanners for all datasets
             scanners = [
                 dataset.scanner(
-                    columns=self._validate_columns(dataset.schema, columns),
+                    columns=[col for col in columns if col in dataset.schema.names],
                     filter=build_filter_expression(filter_query, dataset.schema) if filter_query else None,
                     batch_size=batch_size
                 )
@@ -291,7 +350,8 @@ class ParquetConcat:
                             null_array = pa.array([None] * len(table), type=field.type)
                             table = table.append_column(field.name, null_array)
 
-                    # Ensure schema alignment
+                    # Reorder columns to match unified_schema before casting
+                    table = table.select(unified_schema.names)
                     table = table.cast(unified_schema, safe=False)
 
                     # Write the batch directly

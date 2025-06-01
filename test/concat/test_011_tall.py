@@ -1,5 +1,7 @@
 import pandas as pd
 import pyarrow.dataset as ds  # Ensure this import is included
+import pytest
+
 from parq_tools.parq_concat import ParquetConcat
 
 
@@ -75,6 +77,32 @@ def test_tall_concat_with_non_index_filter(parquet_tall_file_11, parquet_tall_fi
     # Rows with `b > 30` are from `parquet_tall_file_12` (b = 32, 34, 36, 38, 40)
     # and `parquet_tall_file_13` (b = 42, 44, 46, 48, 50, 52, 54, 56, 58, 60)
     assert len(df_output) == 15
+
+def test_tall_concat_filter_on_missing_column(tmp_path):
+    import pandas as pd
+    from parq_tools.parq_concat import ParquetConcat
+
+    # File 1: no column 'b'
+    df1 = pd.DataFrame({"x": [1, 2, 3], "a": ["A", "B", "C"]})
+    # File 2: has column 'b'
+    df2 = pd.DataFrame({"x": [4, 5, 6], "b": [10, 20, 30]})
+
+    f1 = tmp_path / "file1.parquet"
+    f2 = tmp_path / "file2.parquet"
+    df1.to_parquet(f1, index=False)
+    df2.to_parquet(f2, index=False)
+
+    concat = ParquetConcat(
+        files=[f1, f2],
+        axis=0,
+        index_columns=["x"]
+    )
+    output_file = tmp_path / "tall_concat_missing_col_filter.parquet"
+
+    # This should fail: filter references 'b', which is missing in f1
+    filter_query = "b > 15"
+    with pytest.raises(ValueError, match="The filter query references columns that are missing in one or more datasets"):
+        concat.concat_to_file(output_file, filter_query=filter_query)
 
 def test_tall_concat_against_pandas(parquet_tall_file_11, parquet_tall_file_12, parquet_tall_file_13, tmp_path):
     # Define the output file paths
