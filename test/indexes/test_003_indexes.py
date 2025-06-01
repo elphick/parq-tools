@@ -2,9 +2,10 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 from pathlib import Path
-from parq_tools.utils.indexes import reindex_parquet
 
-from parq_tools.utils import sort_parquet_file
+from parq_tools import reindex_parquet
+
+from parq_tools import sort_parquet_file
 
 
 def test_sort_parquet_file(parquet_unsorted_file, tmp_path):
@@ -25,6 +26,7 @@ def test_sort_parquet_file(parquet_unsorted_file, tmp_path):
 
 
 def test_reindex_parquet(tmp_path: Path):
+
     # Create a temporary sparse Parquet file
     sparse_data = {
         "id": [1, 2, 3],

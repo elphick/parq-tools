@@ -1,7 +1,7 @@
 import pyarrow as pa
 import pyarrow.parquet as pq
 from pathlib import Path
-from parq_tools.utils.filter import filter_parquet_file
+from parq_tools import filter_parquet_file
 
 def test_filter_parquet_file(tmp_path: Path):
     # Create a temporary Parquet file

@@ -3,11 +3,13 @@ from pathlib import Path
 
 import pyarrow.parquet as pq
 import pyarrow.dataset as ds
-from parq_tools.utils.filter_parser import build_filter_expression
+# noinspection PyProtectedMember
+from parq_tools.utils._query_parser import build_filter_expression
 import pyarrow as pa
 from typing import List, Optional
 
 try:
+    # noinspection PyUnresolvedReferences
     from tqdm import tqdm
 
     HAS_TQDM = True

@@ -73,3 +73,34 @@ def test_wide_concat_with_column_filter(parquet_test_file_1, parquet_test_file_2
     expected_columns = ["x", "y", "z"] + selected_columns
     assert list(df_output.columns) == expected_columns  # Ensure column order matches selected columns
     assert len(df_output) == 10  # Ensure the row count matches the input files
+
+import pandas as pd
+from parq_tools.parq_concat import ParquetConcat
+
+
+def test_wide_concat_against_pandas(parquet_test_file_1, parquet_test_file_2, parquet_test_file_3, tmp_path):
+    # Define the output file paths
+    output_file = tmp_path / "wide_concat_output.parquet"
+
+    # Initialize the ParquetConcat object
+    concat = ParquetConcat(
+        files=[parquet_test_file_1, parquet_test_file_2, parquet_test_file_3],
+        axis=1,
+        index_columns=["x", "y", "z"]
+    )
+
+    # Perform wide concatenation with chunked processing
+    concat.concat_to_file(output_file, batch_size=5, show_progress=False)
+
+    # Read the output files
+    df_concat = pd.read_parquet(output_file).set_index(["x", "y", "z"])
+
+    # concat with pandas
+    df_pandas = pd.concat(
+        [pd.read_parquet(file).set_index(['x', 'y', 'z']) for file in [parquet_test_file_1, parquet_test_file_2, parquet_test_file_3]],
+        axis=1,
+        ignore_index=False
+    )
+
+    # Compare the DataFrames
+    pd.testing.assert_frame_equal(df_concat, df_pandas)
