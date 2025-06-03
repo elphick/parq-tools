@@ -34,3 +34,34 @@ def test_filter_parquet_file(tmp_path: Path):
 
     # Assert the output matches the expected result
     assert output_table.equals(expected_table)
+
+
+def test_filter_parquet_file_no_filter(tmp_path: Path):
+    # Create a temporary Parquet file
+    input_data = {
+        "x": [1, 2, 3, 4, 5],
+        "y": [10, 20, 30, 40, 50],
+        "z": ["a", "b", "c", "d", "e"]
+    }
+    input_table = pa.Table.from_pydict(input_data)
+    input_path = tmp_path / "input.parquet"
+    pq.write_table(input_table, input_path)
+
+    # Define the output path
+    output_path = tmp_path / "output.parquet"
+
+    # Apply the filter with filter_expression=None
+    filter_parquet_file(input_path, output_path, None, columns=["x", "y"], show_progress=False)
+
+    # Read the output Parquet file
+    output_table = pq.read_table(output_path)
+
+    # Expected data (all rows, selected columns)
+    expected_data = {
+        "x": [1, 2, 3, 4, 5],
+        "y": [10, 20, 30, 40, 50]
+    }
+    expected_table = pa.Table.from_pydict(expected_data)
+
+    # Assert the output matches the expected result
+    assert output_table.equals(expected_table)
