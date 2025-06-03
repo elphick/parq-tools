@@ -1,16 +1,9 @@
 import os
 import sys
 
-import plotly
-from plotly.io._sg_scraper import plotly_sg_scraper
 from sphinx_gallery.sorting import FileNameSortKey
 
-image_scrapers = ('matplotlib', plotly_sg_scraper,)
-
-from plotly.io._sg_scraper import plotly_sg_scraper
-# import plotly.io as pio
-#
-# pio.renderers.default = 'sphinx_gallery_png'  # 'sphinx_gallery'
+image_scrapers = ('matplotlib')
 
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../..'))
