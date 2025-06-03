@@ -112,7 +112,7 @@ def reindex_parquet(sparse_parquet_path: Path, output_path: Path,
         output_path (Path): Path to save the re-indexed Parquet file.
         new_index (pa.Table): New index as a PyArrow table.
         chunk_size (int): Number of rows to process per chunk.
-        sort_after_reindex (bool): Whether to sort the output after reindexing. Defaults to False.
+        sort_after_reindex (bool): Whether to sort the output after reindexing. Defaults to True.
 
     """
     # Read the sparse Parquet file as a dataset
