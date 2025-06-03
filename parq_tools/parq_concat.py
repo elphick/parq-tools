@@ -6,6 +6,7 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 from typing import List, Optional
 
+from parq_tools.utils import atomic_output_file
 from parq_tools.utils.index_utils import validate_index_alignment
 # noinspection PyProtectedMember
 from parq_tools.utils._query_parser import build_filter_expression, get_filter_parser, get_referenced_columns
@@ -21,16 +22,14 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
-def concat_parquet_files(
-        files: List[Path],
-        output_path: Path,
-        axis: int = 0,
-        index_columns: Optional[List[str]] = None,
-        filter_query: Optional[str] = None,
-        columns: Optional[List[str]] = None,
-        batch_size: int = 100_000,
-        show_progress: bool = False
-) -> None:
+def concat_parquet_files(files: List[Path],
+                         output_path: Path,
+                         axis: int = 0,
+                         index_columns: Optional[List[str]] = None,
+                         filter_query: Optional[str] = None,
+                         columns: Optional[List[str]] = None,
+                         batch_size: int = 100_000,
+                         show_progress: bool = False) -> None:
     """
     Concatenate multiple Parquet files into a single file, supporting both row-wise and column-wise concatenation.
 
@@ -55,12 +54,6 @@ class ParquetConcat:
     """
     A utility for concatenating Parquet files while supporting axis-based merging, filtering,
     and progress tracking.
-
-    Attributes:
-        files (List[str]): List of input Parquet file paths.
-        axis (int): Axis along which to concatenate (0 for row-wise, 1 for column-wise).
-        index_columns (Optional[List[str]]): List of index columns for row-wise sorting after concatenation.
-        show_progress (bool): If True, displays a progress bar using `tqdm` (if installed).
     """
 
     def __init__(self, files: List[Path], axis: int = 0,
@@ -195,13 +188,13 @@ class ParquetConcat:
             self._concat_wide(datasets, unified_schema, output_path, columns, filter_query, batch_size, show_progress)
         else:  # Tall concatenation
             self._concat_tall(datasets, unified_schema, output_path, columns, filter_query, batch_size, show_progress)
+        logging.info(f"Concatenation along axis {self.axis} completed and saved to: %s", output_path)
 
     def _concat_wide(self, datasets: List[ds.Dataset], unified_schema: pa.Schema, output_path: Path,
                      columns: Optional[List[str]], filter_query: Optional[str],
                      batch_size: int, show_progress: bool) -> None:
-        """
-        Handles wide concatenation (axis=1) in a memory-efficient manner by processing data in batches.
-        """
+        """Handles wide concatenation (axis=1) in a memory-efficient manner by batch processing"""
+
         logging.info("Starting wide concatenation with batch processing")
 
         # Initialize columns if None
@@ -210,7 +203,6 @@ class ParquetConcat:
 
         validate_index_alignment(datasets, index_columns=self.index_columns)
 
-        writer = None
         progress_bar = None
 
         try:
@@ -230,79 +222,70 @@ class ParquetConcat:
                     for dataset in datasets)
                 progress_bar = tqdm(total=total_batches, desc="Processing batches", unit="batch")
 
-            while True:
-                aligned_batches = []
-                all_exhausted = True
+            with atomic_output_file(output_path) as tmp_file:
+                writer = None
+                try:
 
-                for scanner in scanners:
-                    try:
-                        batch = next(scanner)
-                        table = pa.Table.from_batches([batch])
-                        if table.column_names == self.index_columns:
-                            # If the table only contains index columns, skip it
-                            continue
-                        aligned_batches.append(table)
-                        all_exhausted = False
-                    except StopIteration:
-                        aligned_batches.append(None)
+                    while True:
+                        aligned_batches = []
+                        all_exhausted = True
 
-                if all_exhausted:
-                    break
+                        for scanner in scanners:
+                            try:
+                                batch = next(scanner)
+                                table = pa.Table.from_batches([batch])
+                                if table.column_names == self.index_columns:
+                                    # If the table only contains index columns, skip it
+                                    continue
+                                aligned_batches.append(table)
+                                all_exhausted = False
+                            except StopIteration:
+                                aligned_batches.append(None)
 
-                # Merge tables horizontally by combining their columns
-                combined_arrays = []
-                combined_fields = []
-                for i, table in enumerate(aligned_batches):
-                    if table is None:
-                        continue
-                    if i == 0:
-                        combined_arrays.extend(table.columns)
-                        combined_fields.extend(table.schema)
-                    else:
-                        # Exclude index columns from all but the first table
-                        for col, field in zip(table.columns, table.schema):
-                            if field.name not in self.index_columns:
-                                combined_arrays.append(col)
-                                combined_fields.append(field)
-                combined_table = pa.Table.from_arrays(combined_arrays, schema=pa.schema(combined_fields))
+                        if all_exhausted:
+                            break
 
-                # Apply row-level filtering to the combined table
-                if filter_query:
-                    filter_expression = build_filter_expression(filter_query, combined_table.schema)
-                    combined_table = combined_table.filter(filter_expression)
+                        # Merge tables horizontally by combining their columns
+                        combined_arrays = []
+                        combined_fields = []
+                        for i, table in enumerate(aligned_batches):
+                            if table is None:
+                                continue
+                            if i == 0:
+                                combined_arrays.extend(table.columns)
+                                combined_fields.extend(table.schema)
+                            else:
+                                # Exclude index columns from all but the first table
+                                for col, field in zip(table.columns, table.schema):
+                                    if field.name not in self.index_columns:
+                                        combined_arrays.append(col)
+                                        combined_fields.append(field)
+                        combined_table = pa.Table.from_arrays(combined_arrays, schema=pa.schema(combined_fields))
 
-                # Write the filtered batch to the output file
-                if writer is None:
-                    writer = pq.ParquetWriter(output_path, combined_table.schema)
-                writer.write_table(combined_table)
+                        # Apply row-level filtering to the combined table
+                        if filter_query:
+                            filter_expression = build_filter_expression(filter_query, combined_table.schema)
+                            combined_table = combined_table.filter(filter_expression)
 
-                if progress_bar:
-                    progress_bar.update(1)
+                        # Write the filtered batch to the output file
+                        if writer is None:
+                            writer = pq.ParquetWriter(tmp_file, combined_table.schema)
+                        writer.write_table(combined_table)
 
+                        if progress_bar:
+                            progress_bar.update(1)
+                finally:
+                    if writer:
+                        writer.close()
 
         finally:
-            if writer:
-                writer.close()
             if progress_bar:
                 progress_bar.close()
-        logging.info("Wide concatenation completed and saved to: %s", output_path)
 
     def _concat_tall(self, datasets: List[ds.Dataset], unified_schema: pa.Schema, output_path: Path,
                      columns: Optional[List[str]], filter_query: Optional[str], batch_size: int,
                      show_progress: bool) -> None:
-        """
-        Handles tall concatenation (axis=0).
-
-        Args:
-            datasets (List[ds.Dataset]): List of datasets to concatenate.
-            unified_schema (pa.Schema): Unified schema for all datasets.
-            output_path (Path): Destination path for the output Parquet file.
-            columns (Optional[List[str]]): List of columns to include in the output.
-            filter_query (Optional[str]): Filter expression to apply.
-            batch_size (int): Number of rows per batch to process.
-            show_progress (bool): If True, displays a progress bar using `tqdm` (if installed).
-        """
-        writer = None
+        """Handles tall concatenation (axis=0) in a memory-efficient manner by batch processing"""
         progress_bar = None
 
         try:
@@ -326,29 +309,34 @@ class ParquetConcat:
                 for dataset in datasets
             ]
 
-            for scanner in scanners:
-                for batch in scanner.to_batches():
-                    table = pa.Table.from_batches([batch])
+            with atomic_output_file(output_path) as tmp_file:
+                writer = None
+                try:
 
-                    # Align the table to the unified schema
-                    for field in unified_schema:
-                        if field.name not in table.schema.names:
-                            null_array = pa.array([None] * len(table), type=field.type)
-                            table = table.append_column(field.name, null_array)
+                    for scanner in scanners:
+                        for batch in scanner.to_batches():
+                            table = pa.Table.from_batches([batch])
 
-                    # Reorder columns to match unified_schema before casting
-                    table = table.select(unified_schema.names)
-                    table = table.cast(unified_schema, safe=False)
+                            # Align the table to the unified schema
+                            for field in unified_schema:
+                                if field.name not in table.schema.names:
+                                    null_array = pa.array([None] * len(table), type=field.type)
+                                    table = table.append_column(field.name, null_array)
 
-                    # Write the batch directly
-                    if writer is None:
-                        writer = pq.ParquetWriter(output_path, table.schema)
-                    writer.write_table(table)
-                    if progress_bar:
-                        progress_bar.update(1)
+                            # Reorder columns to match unified_schema before casting
+                            table = table.select(unified_schema.names)
+                            table = table.cast(unified_schema, safe=False)
+
+                            # Write the batch directly
+                            if writer is None:
+                                writer = pq.ParquetWriter(tmp_file, table.schema)
+                            writer.write_table(table)
+                            if progress_bar:
+                                progress_bar.update(1)
+                finally:
+                    if writer:
+                        writer.close()
         finally:
-            if writer:
-                writer.close()
             if progress_bar:
                 progress_bar.close()
 
