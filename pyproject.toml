@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "parq-tools"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Greg <11791585+elphick@users.noreply.github.com>"]
 readme = "README.md"
@@ -26,11 +26,6 @@ sphinx-rtd-theme = "^2.0.0"
 myst-parser = "^3.0.1"
 sphinx-autodoc-typehints = "^2.1.1"
 matplotlib = "^3.7.2"
-# packages below here are for plotly and plotly thumbnails
-plotly = "^5.15.0"
-kaleido = [
-    { version = "0.1.0.post1", markers = "sys_platform == 'win32'" },
-    { version = "0.2.1", markers = "sys_platform == 'linux'" }]
 coverage = "^7.8.0"
 
 
