@@ -17,9 +17,6 @@ def create_test_blockmodel(shape: tuple[int, int, int],
             The MultiIndex levels for a regular model are x, y, z.  For a tensor model they are x, y, z, dx, dy, dz.
             The tensor model created is a special case where dx, dy, dz are the same for all blocks.
 
-    Returns:
-    pd.DataFrame: DataFrame containing the block model data.
-
     """
 
     num_blocks = np.prod(shape)

@@ -5,13 +5,12 @@ import pyarrow.parquet as pq
 
 from ydata_profiling import ProfileReport
 
+from parq_tools.utils import atomic_output_file
 from parq_tools.utils.profile_utils import ColumnarProfileReport
 
 
-def parquet_column_generator(
-        parquet_path: Union[str, Path],
-        columns: Optional[List[str]] = None
-) -> Iterator[pd.Series]:
+def parquet_column_generator(parquet_path: Union[str, Path],
+                             columns: Optional[List[str]] = None) -> Iterator[pd.Series]:
     """
     Yields columns from a Parquet file as pandas Series.
 
@@ -30,17 +29,27 @@ def parquet_column_generator(
 
 
 class ParquetProfileReport:
-    """
-    High-level profiler for Parquet files using ColumnarProfileReport.
+    """For ydata-profiler reports on large parquet files.
+
+    Useful for profiling large Parquet files without loading them entirely into memory.
+    This class supports both native profiling (without chunking) and columnar profiling (with chunking).
     """
 
-    def __init__(
-            self,
-            parquet_path: Union[str, Path],
-            columns: Optional[List[str]] = None,
-            batch_size: Optional[int] = 1,  # Number of columns to process in each batch
-            show_progress: bool = True,
-    ):
+    def __init__(self,
+                 parquet_path: Union[str, Path],
+                 columns: Optional[List[str]] = None,
+                 batch_size: Optional[int] = 1,  # Number of columns to process in each batch
+                 show_progress: bool = True) -> None:
+        """
+        Initialize the ParquetProfileReport.
+
+        Args:
+            parquet_path: Path to the Parquet file to profile.
+            columns: List of column names to include in the profile. If None, all columns are used.
+            batch_size: Optional[int]: Number of columns to process in each batch. If None,
+             processes all columns at once.
+            show_progress: bool: If True, displays a progress bar during profiling.
+        """
         self.parquet_path = parquet_path
         self.batch_size = batch_size
         self.show_progress = show_progress
@@ -75,16 +84,18 @@ class ParquetProfileReport:
         return self
 
     def to_html(self) -> str:
+        """The HTML representation of the profile report."""
         if self.report is None:
             raise RuntimeError("No report generated. Call profile() first.")
         return self.report.to_html()
 
     def save_html(self, output_html: Path) -> None:
-        output_html.write_text(self.to_html(), encoding="utf-8")
+        """ Save the profile report to a HTML file."""
+        with atomic_output_file(output_html) as tmp_path:
+            tmp_path.write_text(self.to_html(), encoding="utf-8")
 
     def show(self, notebook: bool = False):
-        """
-        Display the profile report in a notebook or open in a browser.
+        """Display the profile report in a notebook or open in a browser.
 
         Args:
             notebook (bool): If True, display in Jupyter notebook. If False, open in browser.

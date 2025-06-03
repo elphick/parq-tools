@@ -1,10 +1,11 @@
-
 from pathlib import Path
 from typing import Iterator, Optional, Union
 import pandas as pd
 import os
 
 from ydata_profiling import ProfileReport
+
+from parq_tools.utils import atomic_output_file
 
 try:
     # noinspection PyUnresolvedReferences
@@ -16,28 +17,26 @@ except ImportError:
 
 
 class ColumnarProfileReport:
-    """
-    Memory-efficient, column-wise profiler for large datasets using ydata-profiling.
+    """Memory-efficient, column-wise profiler for large datasets using ydata-profiling."""
 
-    Args:
-        column_generator (Iterator[Union[pd.Series, pd.DataFrame]]):
-            Generator yielding columns as pd.Series or DataFrames.
-        column_count (Optional[int]):
-            Total number of columns to process (for progress bar).
-            If None, progress bar will be indeterminate.
-        batch_size (int, optional):
-            Number of columns to profile at once. Defaults to 1.
-        show_progress (bool, optional):
-            Whether to show a progress bar (requires tqdm). Defaults to True.
-    """
+    def __init__(self,
+                 column_generator: Iterator[Union[pd.Series, pd.DataFrame]],
+                 column_count: Optional[int] = None,
+                 batch_size: int = 1,
+                 show_progress: bool = True):
+        """
+        Initialize the ColumnarProfileReport.
+        This profiler processes columns in batches, allowing for profiling large datasets without loading them
+        entirely into memory.
 
-    def __init__(
-            self,
-            column_generator: Iterator[Union[pd.Series, pd.DataFrame]],
-            column_count: Optional[int] = None,
-            batch_size: int = 1,
-            show_progress: bool = True,
-    ):
+        Args:
+            column_generator: A generator or iterable that yields pandas Series or DataFrames.
+            column_count: The total number of columns used by the progressbar.
+            batch_size: The number of columns to process in each batch.
+            show_progress: If True, displays a progress bar during profiling.
+        """
+
+
         self.column_generator = column_generator
         self.column_count = column_count
         self.batch_size = batch_size
@@ -65,7 +64,7 @@ class ColumnarProfileReport:
 
         total_progress_steps = total_columns + 1 if total_columns else None
         progress = tqdm(total=total_progress_steps, desc="Profiling columns",
-                             leave=True) if self.show_progress else None
+                        leave=True) if self.show_progress else None
 
         for batch in batched(self.column_generator, self.batch_size):
             batch_names = []
@@ -152,7 +151,8 @@ class ColumnarProfileReport:
         return self.report.to_html()
 
     def save_html(self, output_html: Path) -> None:
-        output_html.write_text(self.to_html(), encoding="utf-8")
+        with atomic_output_file(output_html) as tmp_path:
+            tmp_path.write_text(self.to_html(), encoding="utf-8")
 
     def show(self, notebook: bool = False):
         """
