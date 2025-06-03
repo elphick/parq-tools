@@ -10,6 +10,8 @@ API Reference
 
     parq_filter
     parq_concat
+    parq_rename
+    parq_profile
     utils
 
 

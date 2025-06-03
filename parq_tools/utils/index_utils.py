@@ -121,13 +121,13 @@ def sort_parquet_file(
 
 def reindex_parquet(sparse_parquet_path: Path, output_path: Path,
                     new_index: pa.Table, chunk_size: int = 100_000,
-                    sort_after_reindex: bool = False) -> None:
+                    sort_after_reindex: bool = True) -> None:
     """
     Reindex a sparse Parquet file to align with a new index, processing in chunks.
 
     Args:
         sparse_parquet_path (Path): Path to the sparse Parquet file.
-        output_path (Path): Path to save the reindexed Parquet file.
+        output_path (Path): Path to save the re-indexed Parquet file.
         new_index (pa.Table): New index as a PyArrow table.
         chunk_size (int): Number of rows to process per chunk.
         sort_after_reindex (bool): Whether to sort the output after reindexing. Defaults to False.
