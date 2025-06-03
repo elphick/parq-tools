@@ -40,7 +40,9 @@ def test_native_profile_report(temp_parquet_file, temp_output_file, open_report)
     assert "col3" in report_content
 
     if open_report:
-        webbrowser.open(f"file://{temp_output_file}")
+        with unittest.mock.patch("webbrowser.open") as mock_open:
+            webbrowser.open(f"file://{temp_output_file}")
+            mock_open.assert_called_once_with(f"file://{temp_output_file}")
 
 
 
