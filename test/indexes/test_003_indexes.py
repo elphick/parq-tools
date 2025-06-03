@@ -46,7 +46,7 @@ def test_reindex_parquet(tmp_path: Path):
     output_path = tmp_path / "reindexed.parquet"
 
     # Call the function
-    reindex_parquet(sparse_parquet_path, new_index, output_path)
+    reindex_parquet(sparse_parquet_path, output_path=output_path, new_index=new_index)
 
     # Read the output Parquet file
     reindexed_table = pq.read_table(output_path)

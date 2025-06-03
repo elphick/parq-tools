@@ -7,6 +7,8 @@ import pyarrow.compute as pc
 import pyarrow as pa
 from typing import List
 
+from parq_tools.utils.file_utils import atomic_output_path
+
 try:
     # noinspection PyUnresolvedReferences
     from tqdm import tqdm
@@ -59,47 +61,76 @@ def validate_index_alignment(datasets: List[ds.Dataset], index_columns: List[str
     logging.info("Index alignment validated successfully")
 
 
-def sort_parquet_file(input_path: str, output_path: str, columns: list[str], chunk_size: int = 100_000):
+import pyarrow as pa
+import pyarrow.dataset as ds
+import pyarrow.parquet as pq
+import pyarrow.compute as pc
+from pathlib import Path
+from typing import List
+
+
+def sort_parquet_file(
+        input_path: Path,
+        output_path: Path,
+        columns: List[str],
+        chunk_size: int = 100_000
+) -> None:
     """
     Globally sort a Parquet file by the specified columns.
 
     Args:
-        input_path (str): Path to the input Parquet file.
-        output_path (str): Path to save the sorted Parquet file.
-        columns (list[str]): List of column names to sort by.
-        chunk_size (int): Number of rows to process per chunk.
+        input_path (Path): Path to the input Parquet file.
+        output_path (Path): Path to save the sorted Parquet file.
+        columns (List[str]): List of column names to sort by.
+        chunk_size (int, optional): Number of rows to process per chunk. Defaults to 100_000.
 
     Returns:
         None
+
+    Example:
+        sort_parquet_file(
+            input_path=Path("input.parquet"),
+            output_path=Path("sorted.parquet"),
+            columns=["x", "y", "z"]
+        )
     """
-    dataset = ds.dataset(input_path, format="parquet")
-    sorted_batches = []
+    dataset: ds.Dataset = ds.dataset(input_path, format="parquet")
+    sorted_batches: List[pa.Table] = []
 
     # Read and sort each chunk
     for batch in dataset.to_batches(batch_size=chunk_size):
-        table = pa.Table.from_batches([batch])
-        sort_indices = pc.sort_indices(table, sort_keys=[(col, "ascending") for col in columns])
-        sorted_table = table.take(sort_indices)
+        table: pa.Table = pa.Table.from_batches([batch])
+        sort_indices: pa.Array = pc.sort_indices(
+            table, sort_keys=[(col, "ascending") for col in columns]
+        )
+        sorted_table: pa.Table = table.take(sort_indices)
         sorted_batches.append(sorted_table)
 
     # Merge all sorted chunks
-    merged_table = pa.concat_tables(sorted_batches).combine_chunks()
-    sort_indices = pc.sort_indices(merged_table, sort_keys=[(col, "ascending") for col in columns])
-    sorted_table = merged_table.take(sort_indices)
+    merged_table: pa.Table = pa.concat_tables(sorted_batches).combine_chunks()
+    sort_indices: pa.Array = pc.sort_indices(
+        merged_table, sort_keys=[(col, "ascending") for col in columns]
+    )
+    sorted_table: pa.Table = merged_table.take(sort_indices)
 
     # Write the globally sorted table to a new Parquet file
-    pq.write_table(sorted_table, output_path)
+    with atomic_output_path(output_path) as tmp_path:
+        # Write to tmp_path
+        pq.write_table(sorted_table, tmp_path)
 
 
-def reindex_parquet(sparse_parquet_path: Path, new_index: pa.Table, output_path: Path, chunk_size: int = 100_000):
+def reindex_parquet(sparse_parquet_path: Path, output_path: Path,
+                    new_index: pa.Table, chunk_size: int = 100_000,
+                    sort_after_reindex: bool = False) -> None:
     """
     Reindex a sparse Parquet file to align with a new index, processing in chunks.
 
     Args:
         sparse_parquet_path (Path): Path to the sparse Parquet file.
-        new_index (pa.Table): New index as a PyArrow table.
         output_path (Path): Path to save the reindexed Parquet file.
+        new_index (pa.Table): New index as a PyArrow table.
         chunk_size (int): Number of rows to process per chunk.
+        sort_after_reindex (bool): Whether to sort the output after reindexing. Defaults to False.
 
     Returns:
         None
@@ -114,7 +145,7 @@ def reindex_parquet(sparse_parquet_path: Path, new_index: pa.Table, output_path:
     reindexed_table = new_index.join(sparse_table, keys=index_columns, join_type="left outer")
     writer_schema = reindexed_table.schema
 
-    with pq.ParquetWriter(output_path, schema=writer_schema) as writer:
+    with atomic_output_path(output_path) as tmp_path, pq.ParquetWriter(tmp_path, schema=writer_schema) as writer:
         # Process the sparse dataset in chunks
         for batch in sparse_dataset.to_batches(batch_size=chunk_size):
             sparse_table = pa.Table.from_batches([batch])
@@ -135,10 +166,15 @@ def reindex_parquet(sparse_parquet_path: Path, new_index: pa.Table, output_path:
                 elif pa.types.is_integer(field.type):
                     column = pc.if_else(pc.is_null(column), pa.scalar(None, type=pa.int64()), column)
                 columns.append(column)
-
-            # Create a new table with filled values
             reindexed_table = pa.table(columns, schema=reindexed_table.schema)
-
-            # Write the processed chunk to the output file
             writer.write_table(reindexed_table)
             logging.info(f"Wrote {len(batch)} rows to {output_path}")
+
+    if sort_after_reindex:
+        with atomic_output_path(output_path) as tmp_path:
+            sort_parquet_file(
+                input_path=output_path,
+                output_path=tmp_path,
+                columns=index_columns,
+                chunk_size=chunk_size
+            )
