@@ -29,8 +29,10 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',  # to document the
               'sphinx.ext.napoleon',  # for parsing numpy/google docstrings
               'sphinx_gallery.gen_gallery',  # to generate a gallery of examples
               'sphinx_autodoc_typehints',
-              'myst_parser',  # for parsing md files
+              'myst_parser',  # for parsing md files,
               ]
+
+myst_enable_extensions = ["colon_fence", "tasklist"]
 
 autosummary_generate = True
 sphinx_gallery_conf = {
