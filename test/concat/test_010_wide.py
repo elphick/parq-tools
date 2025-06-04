@@ -1,6 +1,5 @@
 import pandas as pd
-import pytest
-
+import pyarrow.parquet as pq
 from parq_tools.parq_concat import ParquetConcat
 
 
@@ -96,12 +95,10 @@ def test_wide_concat_single_index_column(tmp_path):
     )
 
     concat.concat_to_file(output_file)
-    df = pd.read_parquet(output_file) # Read the concatenated file
+    df = pd.read_parquet(output_file)  # Read the concatenated file
     # Verify the structure of the concatenated DataFrame
     expected_columns = ["id", "a", "b"]
     assert list(df.columns) == expected_columns
-
-
 
 
 def test_wide_concat_against_pandas(parquet_test_file_1, parquet_test_file_2, parquet_test_file_3, tmp_path):
@@ -131,3 +128,39 @@ def test_wide_concat_against_pandas(parquet_test_file_1, parquet_test_file_2, pa
 
     # Compare the DataFrames
     pd.testing.assert_frame_equal(df_concat, df_pandas)
+
+
+def test_wide_concat_preserves_pandas_metadata(tmp_path):
+    # Create DataFrames with pandas extension dtypes
+    df1 = pd.DataFrame({
+        "x": pd.Series([1, 2, 3], dtype="Int64"),
+        "y": pd.Series([4, 5, 6], dtype="Int64"),
+        "a": pd.Series(["A", "B", "C"], dtype="string"),
+    })
+    df2 = pd.DataFrame({
+        "x": pd.Series([1, 2, 3], dtype="Int64"),
+        "y": pd.Series([4, 5, 6], dtype="Int64"),
+        "b": pd.Series([0.1, 0.2, 0.3], dtype="float32"),
+    })
+
+    # Write to Parquet with pandas metadata
+    file1 = tmp_path / "file1.parquet"
+    file2 = tmp_path / "file2.parquet"
+    df1.to_parquet(file1, index=False)
+    df2.to_parquet(file2, index=False)
+
+    # Wide concatenate
+    output_file = tmp_path / "wide_concat.parquet"
+    ParquetConcat([file1, file2], axis=1, index_columns=["x", "y"]).concat_to_file(output_file)
+
+    # Read result and check dtypes
+    result = pd.read_parquet(output_file)
+    assert result["a"].dtype == "string"
+    assert result["x"].dtype == "Int64"
+    assert result["y"].dtype == "Int64"
+    assert result["b"].dtype == "float32"
+
+    # Check for pandas metadata in the output Parquet file
+    parquet_file = pq.ParquetFile(output_file)
+    metadata = parquet_file.schema_arrow.metadata
+    assert metadata is not None and b"pandas" in metadata, "Missing pandas metadata in output Parquet file"

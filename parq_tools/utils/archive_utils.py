@@ -5,7 +5,7 @@ import sys
 import subprocess
 import time
 
-from parq_tools.utils import atomic_output_file, atomic_output_dir
+from parq_tools.utils import atomic_output_dir
 
 try:
     # noinspection PyUnresolvedReferences

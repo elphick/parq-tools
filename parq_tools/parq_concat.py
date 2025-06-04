@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 
@@ -6,7 +7,7 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 from typing import List, Optional
 
-from parq_tools.utils import atomic_output_file
+from parq_tools.utils import atomic_output_file, extract_pandas_metadata, merge_pandas_metadata
 from parq_tools.utils.index_utils import validate_index_alignment
 # noinspection PyProtectedMember
 from parq_tools.utils._query_parser import build_filter_expression, get_filter_parser, get_referenced_columns
@@ -193,7 +194,10 @@ class ParquetConcat:
     def _concat_wide(self, datasets: List[ds.Dataset], unified_schema: pa.Schema, output_path: Path,
                      columns: Optional[List[str]], filter_query: Optional[str],
                      batch_size: int, show_progress: bool) -> None:
-        """Handles wide concatenation (axis=1) in a memory-efficient manner by batch processing"""
+        """Handles wide concatenation (axis=1) in a memory-efficient manner by batch processing
+
+        Explicitly writes merged pandas metadata to the output file if it exists in any input file.
+        """
 
         logging.info("Starting wide concatenation with batch processing")
 
@@ -203,11 +207,18 @@ class ParquetConcat:
 
         validate_index_alignment(datasets, index_columns=self.index_columns)
 
+        # Collect and merge pandas metadata from all input files
+        pandas_metadatas = []
+        for file in self.files:
+            meta = extract_pandas_metadata(file)
+            if meta:
+                pandas_metadatas.append(meta)
+        merged_pandas_meta = merge_pandas_metadata(pandas_metadatas) if pandas_metadatas else None
+
         progress_bar = None
 
         try:
             # Create iterators for all dataset scanners
-            # todo: reconsider index columns -> early global check or per chunk.
             scanners = [
                 iter(dataset.scanner(
                     columns=[col for col in columns if col in dataset.schema.names],
@@ -225,7 +236,6 @@ class ParquetConcat:
             with atomic_output_file(output_path) as tmp_file:
                 writer = None
                 try:
-
                     while True:
                         aligned_batches = []
                         all_exhausted = True
@@ -267,9 +277,17 @@ class ParquetConcat:
                             filter_expression = build_filter_expression(filter_query, combined_table.schema)
                             combined_table = combined_table.filter(filter_expression)
 
-                        # Write the filtered batch to the output file
                         if writer is None:
-                            writer = pq.ParquetWriter(tmp_file, combined_table.schema)
+                            # Attach merged pandas metadata to schema if present
+                            schema = combined_table.schema
+                            if merged_pandas_meta:
+                                new_meta = dict(schema.metadata or {})
+                                new_meta[b"pandas"] = json.dumps(merged_pandas_meta).encode()
+                                schema = schema.with_metadata(new_meta)
+                                logging.info("Writing merged pandas metadata to output file.")
+                            else:
+                                logging.info("No pandas metadata found in input files.")
+                            writer = pq.ParquetWriter(tmp_file, schema)
                         writer.write_table(combined_table)
 
                         if progress_bar:
@@ -285,8 +303,19 @@ class ParquetConcat:
     def _concat_tall(self, datasets: List[ds.Dataset], unified_schema: pa.Schema, output_path: Path,
                      columns: Optional[List[str]], filter_query: Optional[str], batch_size: int,
                      show_progress: bool) -> None:
-        """Handles tall concatenation (axis=0) in a memory-efficient manner by batch processing"""
+        """Handles tall concatenation (axis=0) in a memory-efficient manner by batch processing
+
+        Explicitly writes merged pandas metadata to the output file if it exists in any input file.
+        """
         progress_bar = None
+
+        # Collect and merge pandas metadata from all input files
+        pandas_metadatas = []
+        for file in self.files:
+            meta = extract_pandas_metadata(file)
+            if meta:
+                pandas_metadatas.append(meta)
+        merged_pandas_meta = merge_pandas_metadata(pandas_metadatas) if pandas_metadatas else None
 
         try:
             columns = columns or unified_schema.names
@@ -312,7 +341,6 @@ class ParquetConcat:
             with atomic_output_file(output_path) as tmp_file:
                 writer = None
                 try:
-
                     for scanner in scanners:
                         for batch in scanner.to_batches():
                             table = pa.Table.from_batches([batch])
@@ -329,7 +357,15 @@ class ParquetConcat:
 
                             # Write the batch directly
                             if writer is None:
-                                writer = pq.ParquetWriter(tmp_file, table.schema)
+                                schema = table.schema
+                                if merged_pandas_meta:
+                                    new_meta = dict(schema.metadata or {})
+                                    new_meta[b"pandas"] = json.dumps(merged_pandas_meta).encode()
+                                    schema = schema.with_metadata(new_meta)
+                                    logging.info("Writing merged pandas metadata to output file.")
+                                else:
+                                    logging.info("No pandas metadata found in input files.")
+                                writer = pq.ParquetWriter(tmp_file, schema)
                             writer.write_table(table)
                             if progress_bar:
                                 progress_bar.update(1)
