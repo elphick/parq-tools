@@ -1,9 +1,11 @@
 name: "Run Tests with Poetry"
 
+permissions:
+  contents: write
+
 on:
   push:
   workflow_dispatch:
-
 
 jobs:
   build:
