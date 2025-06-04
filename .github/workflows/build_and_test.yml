@@ -67,6 +67,10 @@ jobs:
         uses: tj-actions/coverage-badge-py@v2
         with:
           output: badges/coverage.svg
+      - name: Ensure destination directory and copy badge
+        run: |
+          mkdir -p docs/source/_static/badges
+          cp badges/coverage.svg docs/source/_static/badges/coverage.svg
       - name: Upload coverage badge
         uses: actions/upload-artifact@v4
         with:
