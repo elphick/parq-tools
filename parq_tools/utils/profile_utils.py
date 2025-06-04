@@ -17,10 +17,13 @@ except ImportError:
 
 
 class ColumnarProfileReport:
-    """Memory-efficient, column-wise profiler for large datasets using ydata-profiling."""
+    """Memory-efficient, column-wise profiler for large datasets using ydata-profiling.
+
+    This class can be leveraged by any file reader that can yield pandas Series.
+    """
 
     def __init__(self,
-                 column_generator: Iterator[Union[pd.Series, pd.DataFrame]],
+                 column_generator: Iterator[pd.Series],
                  column_count: Optional[int] = None,
                  batch_size: int = 1,
                  show_progress: bool = True):
@@ -30,7 +33,7 @@ class ColumnarProfileReport:
         entirely into memory.
 
         Args:
-            column_generator: A generator or iterable that yields pandas Series or DataFrames.
+            column_generator: A generator or iterable that yields pandas Series.
             column_count: The total number of columns used by the progressbar.
             batch_size: The number of columns to process in each batch.
             show_progress: If True, displays a progress bar during profiling.
@@ -172,6 +175,15 @@ class ColumnarProfileReport:
 
 
 class BatchDescription:
+    """A class to patch ydata-profiling progressbar bug
+
+    As at ydata-profiling=4.16.1 there is a bug with the progress bar that does not respect the
+    `progress_bar` parameter in the `ProfileReport` constructor. This class is used to create a
+    description of a batch of columns, mimicking the behavior of `ydata_profiling.model.pandas.describe_1d`
+
+    TODO: report the ydata-profiling unmanaged progressbar bug for an upstream fix
+
+    """
     def __init__(self, config, df, summarizer, typeset):
         from ydata_profiling.model.pandas.summary_pandas import pandas_describe_1d
         from ydata_profiling.model.table import get_table_stats
