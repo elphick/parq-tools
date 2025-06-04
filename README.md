@@ -1,7 +1,7 @@
 # parq-tools
 [![Run Tests](https://github.com/Elphick/parq-tools/actions/workflows/build_and_test.yml/badge.svg?branch=main)](https://github.com/Elphick/parq-tools/actions/workflows/build_and_test.yml)
 [![PyPI](https://img.shields.io/pypi/v/parq-tools.svg?logo=python&logoColor=white)](https://pypi.org/project/parq-tools/)
-![Coverage](badges/coverage.svg)
+![Coverage](https://raw.githubusercontent.com/elphick/parq-tools/main/docs/source/_static/badges/coverage.svg)
 [![Python Versions](https://img.shields.io/pypi/pyversions/parq-tools.svg)](https://pypi.org/project/parq-tools/)
 [![License](https://img.shields.io/github/license/Elphick/parq-tools.svg?logo=apache&logoColor=white)](https://pypi.org/project/parq-tools/)
 [![Publish Docs](https://github.com/Elphick/parq-tools/actions/workflows/docs_to_gh_pages.yml/badge.svg?branch=main)](https://github.com/Elphick/parq-tools/actions/workflows/docs_to_gh_pages.yml)
