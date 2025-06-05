@@ -1,3 +1,17 @@
+"""
+parq_concat.py
+
+Utilities for concatenating Parquet files, supporting both row-wise (tall) and column-wise (wide) operations, with
+optional filtering, column selection, and progress tracking.
+
+Main APIs:
+
+- concat_parquet_files: Concatenate multiple Parquet files into a single file, with flexible options for axis,
+  filtering, and batching.
+- ParquetConcat: Class for advanced concatenation workflows, supporting batch processing, index alignment,
+  and metadata handling.
+"""
+
 import json
 import logging
 from pathlib import Path
@@ -84,28 +98,6 @@ class ParquetConcat:
         for file in self.files:
             if not Path(file).is_file():
                 raise ValueError(f"File not found or inaccessible: {file}")
-
-    def _validate_wide(self, schemas: List[pa.Schema]) -> None:
-        """
-        Validates index column alignment for wide concatenation.
-
-        Args:
-            schemas (List[pa.Schema]): List of schemas from input files.
-
-        Raises:
-            ValueError: If index columns do not match in order or chunk sizes are inconsistent.
-        """
-        logging.info("Validating schemas for wide concatenation")
-        index_set = set(self.index_columns)
-        for schema in schemas:
-            if not index_set.issubset(set(schema.names)):
-                raise ValueError(f"Index columns {self.index_columns} are missing in schema: {schema.names}")
-
-        # Ensure index columns are in the same order across all schemas
-        for schema in schemas:
-            schema_index_columns = [field.name for field in schema if field.name in self.index_columns]
-            if schema_index_columns != self.index_columns:
-                raise ValueError(f"Index columns are not in the same order: {schema_index_columns}")
 
     def _validate_columns(self, schema: pa.Schema, columns: Optional[List[str]]) -> List[str]:
         """
@@ -375,28 +367,6 @@ class ParquetConcat:
         finally:
             if progress_bar:
                 progress_bar.close()
-
-    @staticmethod
-    def _align_schema(table: pa.Table, unified_schema: pa.Schema) -> pa.Table:
-        """
-        Aligns the schema of a table with the unified schema by adding missing columns with null values.
-
-        Args:
-            table (pa.Table): The table to align.
-            unified_schema (pa.Schema): The unified schema to align with.
-
-        Returns:
-            pa.Table: The aligned table.
-        """
-        # Add missing columns with null values
-        for field in unified_schema:
-            if field.name not in table.schema.names:
-                null_array = pa.array([None] * len(table), type=field.type)
-                table = table.append_column(field.name, null_array)
-
-        # Reorder columns to match the unified schema
-        reordered_columns = [table[field.name] for field in unified_schema]
-        return pa.Table.from_arrays(reordered_columns, schema=unified_schema)
 
     @staticmethod
     def _validate_filter(filter_query: Optional[str], schema: pa.Schema) -> None:

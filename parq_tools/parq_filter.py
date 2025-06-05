@@ -1,3 +1,15 @@
+"""
+parq_filter.py
+
+Functions for filtering Parquet files with optional row and column selection, supporting chunked processing and
+progress reporting.
+
+Main API:
+
+- filter_parquet_file: Filter a Parquet file using a pandas-like expression and/or column selection, with efficient
+  chunked writing and optional progress bar.
+"""
+
 import logging
 from pathlib import Path
 

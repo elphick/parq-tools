@@ -39,7 +39,6 @@ class ColumnarProfileReport:
             show_progress: If True, displays a progress bar during profiling.
         """
 
-
         self.column_generator = column_generator
         self.column_count = column_count
         self.batch_size = batch_size
@@ -134,20 +133,6 @@ class ColumnarProfileReport:
         final_report.df = self.head_report.df  # or None
         return final_report
 
-    @staticmethod
-    def _merge_overview(target, source):
-        for k, v in source.items():
-            if isinstance(v, dict) and isinstance(target.get(k), dict):
-                ColumnarProfileReport._merge_overview(target[k], v)
-            elif isinstance(v, (int, float)) and isinstance(target.get(k), (int, float)):
-                target[k] = target.get(k, 0) + v
-            elif isinstance(v, list) and isinstance(target.get(k), list):
-                target[k] = target.get(k, []) + v
-            elif isinstance(v, set) and isinstance(target.get(k), set):
-                target[k] = target.get(k, set()).union(v)
-            else:
-                target[k] = v
-
     def to_html(self) -> str:
         if self.report is None:
             raise RuntimeError("No report generated. Call profile() first.")
@@ -184,6 +169,7 @@ class BatchDescription:
     TODO: report the ydata-profiling unmanaged progressbar bug for an upstream fix
 
     """
+
     def __init__(self, config, df, summarizer, typeset):
         from ydata_profiling.model.pandas.summary_pandas import pandas_describe_1d
         from ydata_profiling.model.table import get_table_stats

@@ -1,9 +1,20 @@
+"""
+parq_rename.py
+
+Utilities for renaming columns in Parquet files, supporting chunked processing, progress reporting, and flexible
+output column selection.
+
+Main API:
+
+- rename_parquet_columns: Rename columns in a Parquet file using a mapping, with options for batching and output
+  column selection.
+"""
+
 import logging
 from pathlib import Path
 import pyarrow.parquet as pq
 import pyarrow.dataset as ds
 import pyarrow as pa
-from typing import List, Optional
 
 from parq_tools.utils import atomic_output_file
 
@@ -61,3 +72,5 @@ def rename_parquet_columns(input_path: Path,
         if progress:
             progress.close()
         logging.info(f"Shape of renamed data: ({total_written}, {len(new_names)})")
+
+

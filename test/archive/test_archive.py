@@ -111,7 +111,7 @@ def test_extract_with_7zip(temp_dir):
     assert extracted_file.read_text() == "This is a test file."
 
 
-@pytest.mark.parametrize("show_progress", [True])
+@pytest.mark.parametrize("show_progress", [False, True])
 def test_extract_with_7zip_with_progress(temp_dir, large_zip_file, show_progress, capsys):
     with capsys.disabled():  # to allow the progress bar to display correctly
 

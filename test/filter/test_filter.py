@@ -20,7 +20,7 @@ def test_filter_parquet_file(tmp_path: Path):
     # Apply the filter
     filter_expression = "x > 2 and y < 50"
     filter_parquet_file(input_path, output_path, filter_expression, columns=["x", "y"],
-                        show_progress=True)
+                        show_progress=True, chunk_size=2)
 
     # Read the output Parquet file
     output_table = pq.read_table(output_path)
