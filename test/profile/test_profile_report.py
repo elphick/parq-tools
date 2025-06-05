@@ -1,5 +1,3 @@
-import unittest
-
 import pandas as pd
 import pytest
 from pathlib import Path
@@ -42,10 +40,11 @@ def test_native_profile_report(temp_parquet_file, temp_output_file, open_report)
     assert "col3" in report_content
 
     if open_report:
+        import webbrowser
+        import unittest.mock
         with unittest.mock.patch("webbrowser.open") as mock_open:
             webbrowser.open(f"file://{temp_output_file}")
             mock_open.assert_called_once_with(f"file://{temp_output_file}")
-
 
 
 @pytest.mark.parametrize("open_report", [True])
@@ -65,5 +64,36 @@ def test_parquet_profile_report(temp_parquet_file, temp_output_file, open_report
     assert "col2" in report_content
     assert "col3" in report_content
 
+    # Only mock browser opening, not report generation
     if open_report:
-        webbrowser.open(f"file://{temp_output_file}")
+        import webbrowser
+        import unittest.mock
+        with unittest.mock.patch("webbrowser.open") as mock_open:
+            webbrowser.open(f"file://{temp_output_file}")
+            mock_open.assert_called_once_with(f"file://{temp_output_file}")
+
+
+def test_parquet_profile_report_show(temp_parquet_file):
+    profiler = ParquetProfileReport(
+        parquet_path=temp_parquet_file,
+        batch_size=1,
+        show_progress=False,
+    )
+    profiler.profile()
+
+    # Test notebook display path
+    class DummyReport:
+        def to_notebook_iframe(self):
+            DummyReport.called = True
+    DummyReport.called = False
+    profiler.report = DummyReport()
+    profiler.show(notebook=True)
+    assert DummyReport.called, "Notebook display was not called."
+
+    # Test browser open path
+    import unittest.mock
+    profiler.report = DummyReport()  # Dummy report with to_html
+    profiler.report.to_html = lambda: "<html></html>"
+    with unittest.mock.patch("webbrowser.open_new_tab") as mock_open:
+        profiler.show(notebook=False)
+        assert mock_open.called, "Browser open_new_tab was not called."

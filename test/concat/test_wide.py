@@ -164,3 +164,28 @@ def test_wide_concat_preserves_pandas_metadata(tmp_path):
     parquet_file = pq.ParquetFile(output_file)
     metadata = parquet_file.schema_arrow.metadata
     assert metadata is not None and b"pandas" in metadata, "Missing pandas metadata in output Parquet file"
+
+
+def test_wide_concat_misordered_columns(tmp_path):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from parq_tools.parq_concat import ParquetConcat
+    # Create two tables with the same columns in different orders
+    data1 = pa.table({'x': [1, 2], 'y': [3, 4], 'z': [5, 6], 'a': [7, 8]})
+    data2 = pa.table({'z': [5, 6], 'y': [3, 4], 'x': [1, 2], 'b': [9, 10]})
+    file1 = tmp_path / 'file1.parquet'
+    file2 = tmp_path / 'file2.parquet'
+    pq.write_table(data1, file1)
+    pq.write_table(data2, file2)
+    output_file = tmp_path / 'wide_concat_misordered_output.parquet'
+    concat = ParquetConcat(
+        files=[file1, file2],
+        axis=1,
+        index_columns=["x", "y", "z"]
+    )
+    concat.concat_to_file(output_file, batch_size=2)
+    df_output = pd.read_parquet(output_file)
+    # The output should have all columns, with index columns first, then the rest
+    expected_columns = ["x", "y", "z", "a", "b"]
+    assert list(df_output.columns) == expected_columns
+    assert len(df_output) == 2

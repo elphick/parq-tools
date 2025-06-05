@@ -1,3 +1,13 @@
+"""
+parq_profile.py
+
+Utilities for profiling Parquet files and generating HTML reports using ydata-profiling, with support for notebook and browser display.
+
+Main API:
+
+- ParquetProfileReport: Class for generating, saving, and displaying profile reports for Parquet files.
+"""
+
 from pathlib import Path
 from typing import Iterator, Optional, List, Union
 import pandas as pd

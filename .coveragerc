@@ -1,0 +1,7 @@
+[run]
+source = parq_tools/parq_tools
+
+[report]
+omit =
+    test/*
+    */test/*
