@@ -1,0 +1,6 @@
+parq\_tools.utils.metadata\_utils.extract\_pandas\_metadata
+===========================================================
+
+.. currentmodule:: parq_tools.utils.metadata_utils
+
+.. autofunction:: extract_pandas_metadata

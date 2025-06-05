@@ -1,0 +1,6 @@
+parq\_tools.utils.index\_utils.sort\_parquet\_file
+==================================================
+
+.. currentmodule:: parq_tools.utils.index_utils
+
+.. autofunction:: sort_parquet_file

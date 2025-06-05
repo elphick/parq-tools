@@ -1,0 +1,6 @@
+parq\_tools.parq\_rename.rename\_parquet\_columns
+=================================================
+
+.. currentmodule:: parq_tools.parq_rename
+
+.. autofunction:: rename_parquet_columns

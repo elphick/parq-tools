@@ -1,0 +1,38 @@
+﻿parq\_tools.parq\_profile
+=========================
+
+.. automodule:: parq_tools.parq_profile
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      parquet_column_generator
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+   
+      ParquetProfileReport
+   
+   
+
+   
+   
+   
+
+
+

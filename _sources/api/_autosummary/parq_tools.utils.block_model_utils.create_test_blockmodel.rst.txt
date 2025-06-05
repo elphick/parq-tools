@@ -1,0 +1,6 @@
+parq\_tools.utils.block\_model\_utils.create\_test\_blockmodel
+==============================================================
+
+.. currentmodule:: parq_tools.utils.block_model_utils
+
+.. autofunction:: create_test_blockmodel

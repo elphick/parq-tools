@@ -1,0 +1,31 @@
+﻿parq\_tools.parq\_rename
+========================
+
+.. automodule:: parq_tools.parq_rename
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      rename_parquet_columns
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

@@ -1,0 +1,32 @@
+parq\_tools.utils.metadata\_utils
+=================================
+
+.. automodule:: parq_tools.utils.metadata_utils
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      extract_pandas_metadata
+      merge_pandas_metadata
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
