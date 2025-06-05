@@ -7,7 +7,7 @@ Main API:
 
 - ParquetProfileReport: Class for generating, saving, and displaying profile reports for Parquet files.
 """
-
+import json
 from pathlib import Path
 from typing import Iterator, Optional, List, Union
 import pandas as pd
@@ -32,9 +32,21 @@ def parquet_column_generator(parquet_path: Union[str, Path],
         pd.Series: Each column as a pandas Series.
     """
     pq_file = pq.ParquetFile(str(parquet_path))
+    pandas_metadata = pq_file.schema.metadata.get(b'pandas')
+    if pandas_metadata:
+        pandas_meta = json.loads(pandas_metadata.decode('utf8'))
+        index_columns = pandas_meta.get('index_columns', [])
+    else:
+        index_columns = []
+
     all_columns = columns or pq_file.schema.names
     for col in all_columns:
-        series = pq_file.read(columns=[col]).to_pandas()[col]
+        if col not in pq_file.schema.metadata:
+            raise ValueError(f"Column '{col}' not found in Parquet file.")
+        if col in index_columns:
+            series= pq_file.read(columns=[col]).to_pandas().reset_index()[col]
+        else:
+            series = pq_file.read(columns=[col]).to_pandas()[col]
         yield series
 
 
