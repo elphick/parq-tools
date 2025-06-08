@@ -13,10 +13,13 @@ lark = "^1.2.2"
 tqdm = { version = "^4.67.1", optional = true }
 ydata-profiling = { version = "^4.16.1", optional = true }
 setuptools = { version = "*", optional = true }
+pyvista = { version = "^0.45.2", optional = true }
+#asv = "^0.6.4"
 
 [tool.poetry.extras]
 profiling = ["ydata-profiling", "setuptools"]
-tqdm = ["tqdm"]
+progress = ["tqdm"]
+blockmodel = ["pyvista"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.1"

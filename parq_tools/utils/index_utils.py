@@ -8,14 +8,8 @@ import pyarrow.compute as pc
 import pyarrow.dataset as ds
 
 from parq_tools.utils import atomic_output_file
-
-try:
-    # noinspection PyUnresolvedReferences
-    from tqdm import tqdm
-
-    HAS_TQDM = True
-except ImportError:
-    HAS_TQDM = False
+from parq_tools.utils.optional_imports import get_tqdm
+from parq_tools.utils.progress import get_batch_progress_bar
 
 
 def validate_index_alignment(datasets: List[ds.Dataset],
@@ -35,6 +29,8 @@ def validate_index_alignment(datasets: List[ds.Dataset],
     logging.info("Validating index alignment across datasets")
     scanners = [dataset.scanner(columns=index_columns, batch_size=batch_size) for dataset in datasets]
     iterators = [scanner.to_batches() for scanner in scanners]
+
+    pbar = get_batch_progress_bar(datasets, batch_size, desc="Validating index alignment")
 
     while True:
         current_batches = []
@@ -57,6 +53,8 @@ def validate_index_alignment(datasets: List[ds.Dataset],
                 raise ValueError(
                     f"Index columns are not aligned across datasets. Mismatch found in dataset {i}."
                 )
+        pbar.update(1)
+    pbar.close()
 
     logging.info("Index alignment validated successfully")
 
@@ -80,6 +78,7 @@ def sort_parquet_file(
     dataset: ds.Dataset = ds.dataset(input_path, format="parquet")
     sorted_batches: List[pa.Table] = []
 
+    pbar = get_batch_progress_bar([dataset], chunk_size, desc="Sorting parquet file")
     # Read and sort each chunk
     for batch in dataset.to_batches(batch_size=chunk_size):
         table: pa.Table = pa.Table.from_batches([batch])
@@ -88,6 +87,8 @@ def sort_parquet_file(
         )
         sorted_table: pa.Table = table.take(sort_indices)
         sorted_batches.append(sorted_table)
+        pbar.update(1)
+    pbar.close()
 
     # Merge all sorted chunks
     merged_table: pa.Table = pa.concat_tables(sorted_batches).combine_chunks()
@@ -126,6 +127,7 @@ def reindex_parquet(sparse_parquet_path: Path, output_path: Path,
     writer_schema = reindexed_table.schema
 
     with atomic_output_file(output_path) as tmp_file, pq.ParquetWriter(tmp_file, schema=writer_schema) as writer:
+        pbar = get_batch_progress_bar([sparse_dataset], chunk_size, desc="Reindexing parquet file")
         # Process the sparse dataset in chunks
         for batch in sparse_dataset.to_batches(batch_size=chunk_size):
             sparse_table = pa.Table.from_batches([batch])
@@ -149,6 +151,8 @@ def reindex_parquet(sparse_parquet_path: Path, output_path: Path,
             reindexed_table = pa.table(columns, schema=reindexed_table.schema)
             writer.write_table(reindexed_table)
             logging.info(f"Wrote {len(batch)} rows to {output_path}")
+            pbar.update(1)
+        pbar.close()
 
     if sort_after_reindex:
         with atomic_output_file(output_path) as tmp_file:

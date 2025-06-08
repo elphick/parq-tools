@@ -17,12 +17,11 @@ import tempfile
 
 import pandas as pd
 import pyarrow as pa
-import pyarrow.parquet as pq
 import pyarrow.dataset as ds
 from pathlib import Path
 
-from parq_tools import rename_parquet_columns, sort_parquet_file, reindex_parquet, validate_index_alignment
-from parq_tools.utils.block_model_utils import create_test_blockmodel
+from parq_tools import sort_parquet_file, reindex_parquet, validate_index_alignment
+from parq_tools.block_models.utils.demo_block_model import create_demo_blockmodel
 
 # %%
 #
@@ -33,7 +32,7 @@ from parq_tools.utils.block_model_utils import create_test_blockmodel
 
 parquet_file_path = Path(tempfile.gettempdir()) / "example_data.parquet"
 
-df: pd.DataFrame = create_test_blockmodel(shape=(3, 3, 3), block_size=(1, 1, 1),
+df: pd.DataFrame = create_demo_blockmodel(shape=(3, 3, 3), block_size=(1, 1, 1),
                                           corner=(-0.5, -0.5, -0.5))
 df.to_parquet(parquet_file_path)
 df

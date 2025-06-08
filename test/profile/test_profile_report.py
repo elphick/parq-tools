@@ -1,8 +1,11 @@
 import pandas as pd
 import pytest
 from pathlib import Path
+
+from parq_tools import rename_and_update_metadata
 from parq_tools.parq_profile import ParquetProfileReport
 import webbrowser
+
 
 @pytest.fixture
 def temp_parquet_file(tmp_path: Path):
@@ -73,6 +76,48 @@ def test_parquet_profile_report(temp_parquet_file, temp_output_file, open_report
             mock_open.assert_called_once_with(f"file://{temp_output_file}")
 
 
+def test_parquet_profile_report_supplied_metadata(temp_parquet_file):
+    from ydata_profiling import ProfileReport
+    metadata = {
+        "description": "This is a test dataset",
+        "version": "1.0.0",  # not a supported key in ydata_profiling
+    }
+    profiler = ParquetProfileReport(
+        parquet_path=temp_parquet_file,
+        batch_size=1,
+        show_progress=False,
+        dataset_metadata=metadata,
+        column_descriptions={'col1': 'Column 1 description'}
+    )
+    profiler.profile()
+
+    # Check if metadata is included in the report
+    assert profiler.report.config.dataset.description == metadata["description"]
+    assert "version" not in profiler.report.config.dataset.__dict__.keys()
+    assert profiler.report.config.variables.descriptions['col1'] == "Column 1 description"
+
+
+def test_parquet_profile_report_metadata_from_file(temp_parquet_file):
+    from ydata_profiling import ProfileReport
+    # Create a Parquet file with metadata
+    rename_and_update_metadata(
+        input_path=temp_parquet_file,
+        output_path=temp_parquet_file,
+        table_metadata={"description": "Test dataset with persisted metadata"},
+        column_metadata={"col1": {"description": "Column 1 description from file"}},
+        show_progress=False)
+    profiler = ParquetProfileReport(
+        parquet_path=temp_parquet_file,
+        batch_size=1,
+        show_progress=False,
+    )
+    profiler.profile()
+
+    # Check if metadata is included in the report
+    assert profiler.report.config.dataset.description == "Test dataset with persisted metadata"
+    assert profiler.report.config.variables.descriptions['col1'] == "Column 1 description from file"
+
+
 def test_parquet_profile_report_show(temp_parquet_file):
     profiler = ParquetProfileReport(
         parquet_path=temp_parquet_file,
@@ -85,6 +130,7 @@ def test_parquet_profile_report_show(temp_parquet_file):
     class DummyReport:
         def to_notebook_iframe(self):
             DummyReport.called = True
+
     DummyReport.called = False
     profiler.report = DummyReport()
     profiler.show(notebook=True)
