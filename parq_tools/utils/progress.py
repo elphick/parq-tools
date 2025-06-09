@@ -1,3 +1,4 @@
+import math
 from typing import Sequence, Optional
 from parq_tools.utils.optional_imports import get_tqdm
 
@@ -21,6 +22,6 @@ def get_batch_progress_bar(
     """
     tqdm = get_tqdm()
     total_rows = sum(dataset.count_rows() for dataset in datasets)
-    total_batches = max((total_rows // batch_size), 1)
+    total_batches = max(math.ceil(total_rows / batch_size), 1)
     return tqdm(total=total_batches, desc=desc, disable=disable)
 
