@@ -162,3 +162,44 @@ def reindex_parquet(sparse_parquet_path: Path, output_path: Path,
                 columns=index_columns,
                 chunk_size=chunk_size
             )
+
+
+def dedup_index_parquet(
+        input_path: Path,
+        output_path: Path,
+        index_columns: List[str],
+        chunk_size: int = 100_000) -> None:
+    """
+    Remove duplicate rows based on index columns from a Parquet file.
+
+    Args:
+        input_path (Path): Path to the input Parquet file.
+        output_path (Path): Path to save the deduplicated Parquet file.
+        index_columns (List[str]): Columns to use as the index for deduplication.
+        chunk_size (int): Number of rows to process per chunk.
+    """
+
+    dataset = ds.dataset(input_path, format="parquet")
+    seen = set()
+    first_batch = next(dataset.to_batches(batch_size=chunk_size))
+    schema = pa.Table.from_batches([first_batch]).schema
+
+    with atomic_output_file(output_path) as tmp_file, pq.ParquetWriter(tmp_file, schema=schema) as writer:
+        tqdm = get_tqdm()
+        pbar = tqdm(total=None, desc="Deduplicating index")
+        for batch in dataset.to_batches(batch_size=chunk_size):
+            table = pa.Table.from_batches([batch])
+            mask = []
+            num_rows = table.num_rows
+            for i in range(num_rows):
+                idx = tuple(table[col][i].as_py() for col in index_columns)
+                if idx not in seen:
+                    seen.add(idx)
+                    mask.append(True)
+                else:
+                    mask.append(False)
+            if any(mask):
+                filtered_table = table.filter(pa.array(mask))
+                writer.write_table(filtered_table)
+            pbar.update(1)
+        pbar.close()
