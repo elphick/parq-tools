@@ -16,7 +16,7 @@ import pyarrow.parquet as pq
 from ydata_profiling import ProfileReport
 
 from parq_tools.utils import atomic_output_file
-from parq_tools.utils.metadata_utils import get_table_metadata, get_column_metadata
+from parq_tools.utils.metadata_utils import get_table_metadata, get_column_metadata, get_pandas_metadata
 from parq_tools.utils.profile_utils import ColumnarProfileReport, ProfileMetadata
 
 
@@ -33,10 +33,9 @@ def parquet_column_generator(parquet_path: Union[str, Path],
         pd.Series: Each column as a pandas Series.
     """
     pq_file = pq.ParquetFile(str(parquet_path))
-    pandas_metadata = pq_file.metadata.metadata.get(b'pandas')
+    pandas_metadata = get_pandas_metadata(pq_file)
     if pandas_metadata:
-        pandas_meta = json.loads(pandas_metadata.decode('utf8'))
-        index_columns = pandas_meta.get('index_columns', [])
+        index_columns = pandas_metadata.get('index_columns', [])
     else:
         index_columns = []
 

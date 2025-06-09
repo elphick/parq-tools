@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 
 
-def create_demo_blockmodel(shape: tuple[int, int, int],
-                           block_size: tuple[float, float, float],
-                           corner: tuple[float, float, float],
+def create_demo_blockmodel(shape: tuple[int, int, int] = (3, 3, 3),
+                           block_size: tuple[float, float, float] = (1.0, 1.0, 1.0),
+                           corner: tuple[float, float, float] = (0.0, 0.0, 0.0),
                            parquet_filepath: Path = None
                            ) -> pd.DataFrame | Path:
     """

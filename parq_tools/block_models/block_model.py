@@ -15,6 +15,7 @@ from typing import Union, Optional
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pyarrow.parquet as pq
 from pandas.core.dtypes.common import is_sparse
 
@@ -49,8 +50,7 @@ class ParquetBlockModel:
         self.columns: list[str] = pq.read_schema(self.path).names
         self._centroid_index: Optional[pd.MultiIndex] = None
         self.attributes: list[str] = [col for col in self.columns if col not in ["x", "y", "z"]]
-        self.column_dtypes: dict[str, np.dtype] = {col: pq.read_schema(self.path).field(col).type.to_pandas_dtype()
-                                                   for col in self.columns if col not in ["x", "y", "z"]}
+        self._extract_column_dtypes()
         self._logger = logging.getLogger(__name__)
 
         if self.is_sparse:
@@ -60,6 +60,24 @@ class ParquetBlockModel:
 
     def __repr__(self):
         return f"ParquetBlockModel(name={self.name}, path={self.path})"
+
+    def _extract_column_dtypes(self):
+        self.column_dtypes: dict[str, np.dtype] = {}
+        self._column_categorical_ordered: dict[str, bool] = {}
+        schema = pq.read_schema(self.path)
+        for col in self.columns:
+            if col in ["x", "y", "z"]:
+                continue
+            field_type = schema.field(col).type
+            if pa.types.is_dictionary(field_type):
+                self.column_dtypes[col] = pd.CategoricalDtype(ordered=field_type.ordered)
+                self._column_categorical_ordered[col] = field_type.ordered
+            else:
+                self.column_dtypes[col] = field_type.to_pandas_dtype()
+
+    @property
+    def column_categorical_ordered(self) -> dict[str, bool]:
+        return self._column_categorical_ordered.copy()
 
     @property
     def centroid_index(self) -> pd.MultiIndex:

@@ -21,7 +21,7 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 from typing import List, Optional
 
-from parq_tools.utils import atomic_output_file, extract_pandas_metadata, merge_pandas_metadata
+from parq_tools.utils import atomic_output_file, get_pandas_metadata, merge_pandas_metadata
 from parq_tools.utils.index_utils import validate_index_alignment
 # noinspection PyProtectedMember
 from parq_tools.utils._query_parser import build_filter_expression, get_filter_parser, get_referenced_columns
@@ -202,7 +202,7 @@ class ParquetConcat:
         # Collect and merge pandas metadata from all input files
         pandas_metadatas = []
         for file in self.files:
-            meta = extract_pandas_metadata(file)
+            meta = get_pandas_metadata(file)
             if meta:
                 pandas_metadatas.append(meta)
         merged_pandas_meta = merge_pandas_metadata(pandas_metadatas) if pandas_metadatas else None
@@ -291,7 +291,7 @@ class ParquetConcat:
         # Collect and merge pandas metadata from all input files
         pandas_metadatas = []
         for file in self.files:
-            meta = extract_pandas_metadata(file)
+            meta = get_pandas_metadata(file)
             if meta:
                 pandas_metadatas.append(meta)
         merged_pandas_meta = merge_pandas_metadata(pandas_metadatas) if pandas_metadatas else None

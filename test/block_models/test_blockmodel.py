@@ -1,7 +1,10 @@
 import os
 from pathlib import Path
+
+import pandas as pd
 import pytest
 from parq_tools.block_models.block_model import ParquetBlockModel
+from parq_tools.block_models.utils import create_demo_blockmodel
 
 
 def test_from_empty_parquet_raises_error(tmp_path):
@@ -26,3 +29,19 @@ def test_create_demo_block_model_creates_file(tmp_path):
     os.remove(filename) if filename.exists() else None
     os.remove(model.path) if filename.exists() else None
 
+def test_block_model_with_categorical_data(tmp_path):
+    # Create a Parquet file with categorical data
+    parquet_path = tmp_path / "categorical_block_model.parquet"
+    blocks = create_demo_blockmodel()
+    blocks['category_col'] = pd.Categorical(['A', 'B', 'C'] * (len(blocks) // 3))
+
+    blocks.to_parquet(parquet_path)
+
+    # Load the block model
+    block_model = ParquetBlockModel.from_parquet(parquet_path)
+
+    # Check if the block model is created correctly
+    assert isinstance(block_model, ParquetBlockModel)
+    assert block_model.path == parquet_path.with_suffix(".pbm.parquet")
+    assert block_model.name == parquet_path.stem
+    assert block_model.data.shape == (3, 4)  # 3 rows, 4 columns including index

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 import pyarrow.parquet as pq
 import json
@@ -7,7 +7,7 @@ import json
 from pyarrow.parquet import ParquetFile
 
 
-def extract_pandas_metadata(parquet_file: Union[Path, ParquetFile]):
+def get_pandas_metadata(parquet_file: Union[Path, ParquetFile]) -> Optional[dict]:
     pf: ParquetFile = parquet_file if isinstance(parquet_file, ParquetFile) else pq.ParquetFile(parquet_file)
     schema = pf.schema_arrow
     meta = schema.metadata
