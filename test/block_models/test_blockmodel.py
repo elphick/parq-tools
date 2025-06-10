@@ -45,3 +45,20 @@ def test_block_model_with_categorical_data(tmp_path):
     assert block_model.path == parquet_path.with_suffix(".pbm.parquet")
     assert block_model.name == parquet_path.stem
     assert block_model.data.shape == (3, 4)  # 3 rows, 4 columns including index
+
+def test_sparse_block_model(tmp_path):
+    # Create a Parquet file with sparse data
+    parquet_path = tmp_path / "sparse_block_model.parquet"
+    blocks = create_demo_blockmodel(shape=(4, 4, 4), block_size=(1.0, 1.0, 1.0), corner=(0.0, 0.0, 0.0))
+    blocks = blocks.query('z!=1.5') # Drop a single z value to create a sparse dataset
+    blocks.to_parquet(parquet_path)
+    # Load the block model
+    block_model = ParquetBlockModel.from_parquet(parquet_path)
+    # Check if the block model is created correctly
+    assert isinstance(block_model, ParquetBlockModel)
+    assert block_model.path == parquet_path.with_suffix(".pbm.parquet")
+    assert block_model.name == parquet_path.stem
+
+    block_model.to_dense_parquet(parquet_path.with_suffix('.dense.parquet'), show_progress=True)
+    df = pd.read_parquet(parquet_path.with_suffix('.dense.parquet'))
+    assert df.shape[0] == 4*4*4

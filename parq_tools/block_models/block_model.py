@@ -9,6 +9,7 @@ Main API:
 
 """
 import logging
+import math
 import shutil
 from pathlib import Path
 from typing import Union, Optional
@@ -18,11 +19,15 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 from pandas.core.dtypes.common import is_sparse
+from pyarrow.parquet import ParquetFile
+from tqdm import tqdm
 
 from parq_tools import ParquetProfileReport
 from parq_tools.block_models.geometry import RegularGeometry
 from parq_tools.block_models.utils.geometry import validate_geometry
 from parq_tools.block_models.utils.pyvista_utils import df_to_pv_structured_grid, df_to_pv_unstructured_grid
+from parq_tools.utils import atomic_output_file
+from parq_tools.utils.progress import get_batch_progress_bar
 
 Point = Union[tuple[float, float, float], list[float, float, float]]
 Triple = Union[tuple[float, float, float], list[float, float, float]]
@@ -42,6 +47,7 @@ class ParquetBlockModel:
     def __init__(self, name: str, path: Path):
         self.name: str = name
         self.path: Path = path
+        self.pf: ParquetFile = ParquetFile(path)
         self.report_path: Optional[Path] = None
         self.geometry: Optional[RegularGeometry] = None
         if path.exists():
@@ -287,3 +293,43 @@ class ParquetBlockModel:
                 "The geometry is not regular. The index columns must be evenly spaced (regular grid) in x, y, and z.")
 
         logging.info(f"Geometry validation completed successfully for {filepath}.")
+
+    import math
+    from tqdm import tqdm  # Add this import at the top
+
+    def to_dense_parquet(self, filepath: Path,
+                   chunk_size: int = 100_000, show_progress: bool = False) -> None:
+        """
+        Save the block model to a Parquet file.
+
+        This method saves the block model as a Parquet file by chunk. If `dense` is True, it saves the block model as a dense grid,
+        Args:
+            filepath (Path): The file path where the Parquet file will be saved.
+            chunk_size (int): The number of blocks to save in each chunk. Defaults to 100_000.
+            show_progress (bool): If True, show a progress bar. Defaults to False.
+        """
+        columns = self.columns
+        dense_index = self.geometry.to_multi_index()
+        parquet_file = pq.ParquetFile(self.path)
+        total_rows = parquet_file.metadata.num_rows
+        total_batches = max(math.ceil(total_rows / chunk_size), 1)
+
+        progress = tqdm(total=total_batches, desc="Exporting", disable=not show_progress) if show_progress else None
+
+        with atomic_output_file(filepath) as tmp_path:
+            writer = None
+            try:
+                for batch in parquet_file.iter_batches(batch_size=chunk_size, columns=columns):
+                    df = pa.Table.from_batches([batch]).to_pandas()
+                    df = df.reindex(dense_index)
+                    table = pa.Table.from_pandas(df)
+                    if writer is None:
+                        writer = pq.ParquetWriter(tmp_path, table.schema)
+                    writer.write_table(table)
+                    if progress:
+                        progress.update(1)
+            finally:
+                if writer is not None:
+                    writer.close()
+                if progress:
+                    progress.close()

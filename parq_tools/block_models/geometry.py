@@ -295,8 +295,10 @@ class RegularGeometry(Geometry):
         corner_y = y[0] - block_size[1] / 2
         corner_z = z[0] - block_size[2] / 2
 
-        # Compute the shape as the number of unique centroids
-        shape = (len(x), len(y), len(z))
+        # Compute the shape, accounting for sparsity in the index
+        shape = (int((max(x) - min(x)) / block_size[0]) + 1,
+                 int((max(y) - min(y)) / block_size[1]) + 1,
+                 int((max(z) - min(z)) / block_size[2]) + 1)
 
         return cls(
             corner=(corner_x, corner_y, corner_z),
