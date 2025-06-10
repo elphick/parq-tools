@@ -62,3 +62,4 @@ def test_sparse_block_model(tmp_path):
     block_model.to_dense_parquet(parquet_path.with_suffix('.dense.parquet'), show_progress=True)
     df = pd.read_parquet(parquet_path.with_suffix('.dense.parquet'))
     assert df.shape[0] == 4*4*4
+    assert df.index.names == ['x', 'y', 'z']

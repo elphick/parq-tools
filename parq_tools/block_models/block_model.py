@@ -294,15 +294,17 @@ class ParquetBlockModel:
 
         logging.info(f"Geometry validation completed successfully for {filepath}.")
 
-    import math
-    from tqdm import tqdm  # Add this import at the top
-
-    def to_dense_parquet(self, filepath: Path,
-                         chunk_size: int = 1024 * 1024, show_progress: bool = False) -> None:
+    def to_dense_parquet(
+            self,
+            filepath: Path,
+            chunk_size: int = 1024 * 1024,
+            show_progress: bool = False
+    ) -> None:
         """
         Save the block model to a Parquet file.
 
-        This method saves the block model as a Parquet file by chunk. If `dense` is True, it saves the block model as a dense grid,
+        This method saves the block model as a Parquet file by chunk. If `dense` is True, it saves the block model as a dense grid.
+
         Args:
             filepath (Path): The file path where the Parquet file will be saved.
             chunk_size (int): The number of blocks to save in each chunk.
@@ -312,35 +314,36 @@ class ParquetBlockModel:
         columns = self.columns
         total_rows = len(dense_index)
         total_batches = math.ceil(total_rows / chunk_size)
+        pf = pq.ParquetFile(self.path)
 
-        # Load sparse index and data
-        sparse_df = pd.read_parquet(self.path, columns=columns)
-        if not (isinstance(sparse_df.index, pd.MultiIndex) and list(sparse_df.index.names) == ["x", "y", "z"]):
-            sparse_df = sparse_df.set_index(["x", "y", "z"])
-        sparse_index = sparse_df.index
-
-        # Map sparse index to dense index positions
-        sparse_pos = dense_index.get_indexer(sparse_index)
-        sparse_df["__dense_pos__"] = sparse_pos
-
+        # Prepare a mapping from dense index to sparse data
+        dense_df = pd.DataFrame(index=dense_index)
         progress = tqdm(total=total_batches, desc="Writing dense grid",
                         disable=not show_progress) if show_progress else None
 
         with atomic_output_file(filepath) as tmp_path:
             writer = None
             try:
+                for batch in pf.iter_batches(columns=columns):
+                    batch_df = batch.to_pandas()
+                    dense_df.loc[batch_df.index, batch_df.columns] = batch_df
+
                 for i in range(total_batches):
                     start = i * chunk_size
                     end = min((i + 1) * chunk_size, total_rows)
-                    chunk_index = dense_index[start:end]
-                    # Find sparse rows in this chunk
-                    mask = (sparse_df["__dense_pos__"] >= start) & (sparse_df["__dense_pos__"] < end)
-                    chunk_sparse = sparse_df[mask].copy()
-                    # Remove helper column
-                    chunk_sparse = chunk_sparse.drop(columns="__dense_pos__")
-                    # Reindex to chunk_index to fill missing
-                    chunk_dense = chunk_sparse.reindex(chunk_index).reset_index()
-                    table = pa.Table.from_pandas(chunk_dense)
+                    chunk = dense_df.iloc[start:end]
+                    chunk.index.names = ["x", "y", "z"]
+                    # map types to the original
+                    for col, dtype in self.column_dtypes.items():
+                        if col in chunk.columns:
+                            # Remap numpy int types to pandas nullable Int types
+                            if pd.api.types.is_integer_dtype(dtype):
+                                bitwidth = np.dtype(dtype).itemsize * 8
+                                pandas_nullable = pd.api.types.pandas_dtype(f"Int{bitwidth}")
+                                chunk[col] = chunk[col].astype(pandas_nullable)
+                            else:
+                                chunk[col] = chunk[col].astype(dtype)
+                    table = pa.Table.from_pandas(chunk)
                     if writer is None:
                         writer = pq.ParquetWriter(tmp_path, table.schema)
                     writer.write_table(table)
