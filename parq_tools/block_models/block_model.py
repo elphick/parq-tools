@@ -217,7 +217,7 @@ class ParquetBlockModel:
 
         return plotter
 
-    def read(self, columns: Optional[list[str]] = None, with_index: bool=True) -> pd.DataFrame:
+    def read(self, columns: Optional[list[str]] = None, with_index: bool = True) -> pd.DataFrame:
         """
         Read the Parquet file and return a DataFrame.
 
@@ -298,31 +298,49 @@ class ParquetBlockModel:
     from tqdm import tqdm  # Add this import at the top
 
     def to_dense_parquet(self, filepath: Path,
-                   chunk_size: int = 100_000, show_progress: bool = False) -> None:
+                         chunk_size: int = 1024 * 1024, show_progress: bool = False) -> None:
         """
         Save the block model to a Parquet file.
 
         This method saves the block model as a Parquet file by chunk. If `dense` is True, it saves the block model as a dense grid,
         Args:
             filepath (Path): The file path where the Parquet file will be saved.
-            chunk_size (int): The number of blocks to save in each chunk. Defaults to 100_000.
+            chunk_size (int): The number of blocks to save in each chunk.
             show_progress (bool): If True, show a progress bar. Defaults to False.
         """
-        columns = self.columns
         dense_index = self.geometry.to_multi_index()
-        parquet_file = pq.ParquetFile(self.path)
-        total_rows = parquet_file.metadata.num_rows
-        total_batches = max(math.ceil(total_rows / chunk_size), 1)
+        columns = self.columns
+        total_rows = len(dense_index)
+        total_batches = math.ceil(total_rows / chunk_size)
 
-        progress = tqdm(total=total_batches, desc="Exporting", disable=not show_progress) if show_progress else None
+        # Load sparse index and data
+        sparse_df = pd.read_parquet(self.path, columns=columns)
+        if not (isinstance(sparse_df.index, pd.MultiIndex) and list(sparse_df.index.names) == ["x", "y", "z"]):
+            sparse_df = sparse_df.set_index(["x", "y", "z"])
+        sparse_index = sparse_df.index
+
+        # Map sparse index to dense index positions
+        sparse_pos = dense_index.get_indexer(sparse_index)
+        sparse_df["__dense_pos__"] = sparse_pos
+
+        progress = tqdm(total=total_batches, desc="Writing dense grid",
+                        disable=not show_progress) if show_progress else None
 
         with atomic_output_file(filepath) as tmp_path:
             writer = None
             try:
-                for batch in parquet_file.iter_batches(batch_size=chunk_size, columns=columns):
-                    df = pa.Table.from_batches([batch]).to_pandas()
-                    df = df.reindex(dense_index)
-                    table = pa.Table.from_pandas(df)
+                for i in range(total_batches):
+                    start = i * chunk_size
+                    end = min((i + 1) * chunk_size, total_rows)
+                    chunk_index = dense_index[start:end]
+                    # Find sparse rows in this chunk
+                    mask = (sparse_df["__dense_pos__"] >= start) & (sparse_df["__dense_pos__"] < end)
+                    chunk_sparse = sparse_df[mask].copy()
+                    # Remove helper column
+                    chunk_sparse = chunk_sparse.drop(columns="__dense_pos__")
+                    # Reindex to chunk_index to fill missing
+                    chunk_dense = chunk_sparse.reindex(chunk_index).reset_index()
+                    table = pa.Table.from_pandas(chunk_dense)
                     if writer is None:
                         writer = pq.ParquetWriter(tmp_path, table.schema)
                     writer.write_table(table)
