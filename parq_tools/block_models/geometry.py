@@ -11,6 +11,7 @@ Main API:
 """
 
 import json
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -29,7 +30,6 @@ Triple = Union[tuple[float, float, float], list[float, float, float]]
 MinMax = Union[tuple[float, float], list[float, float]]
 
 
-@dataclass
 class Geometry(ABC):
     """Base class for geometry objects.
 
@@ -45,14 +45,17 @@ class Geometry(ABC):
     """
 
     corner: Point
-    axis_u: Vector
-    axis_v: Vector
-    axis_w: Vector
-    _centroid_u: Optional[FloatArray] = field(default=None, init=False, repr=False)
-    _centroid_v: Optional[FloatArray] = field(default=None, init=False, repr=False)
-    _centroid_w: Optional[FloatArray] = field(default=None, init=False, repr=False)
-    _shape: Optional[Point] = field(default=None, init=False, repr=False)
-    _is_regular: Optional[bool] = field(default=None, init=False, repr=False)
+    axis_u: Vector = (1, 0, 0)
+    axis_v: Vector = (0, 1, 0)
+    axis_w: Vector = (0, 0, 1)
+    srs: Optional[str] = None  # Spatial Reference System, e.g. EPSG code
+
+    _centroid_u: Optional[FloatArray] = None
+    _centroid_v: Optional[FloatArray] = None
+    _centroid_w: Optional[FloatArray] = None
+    _shape: Optional[Point] = None
+    _is_regular: Optional[bool] = None
+    _logger: logging.Logger = logging.getLogger(__name__)
 
     def to_summary_json(self) -> str:
         """Convert the geometry to a JSON string.
@@ -148,27 +151,15 @@ class Geometry(ABC):
 class RegularGeometry(Geometry):
     """Regular geometry data class.
 
-    Regular Geometry applies to an omf.v1 VolumeElement or an omf.v2 RegularBlockModel.
     """
 
+    corner: Point
     block_size: Triple
-    _shape: Triple = field(default=None, init=False, repr=False)
-
-    def __init__(
-            self,
-            corner: Point,
-            axis_u: Vector,
-            axis_v: Vector,
-            axis_w: Vector,
-            block_size: Triple,
-            shape: Triple = None,
-    ):
-        self.corner = corner
-        self.axis_u = axis_u
-        self.axis_v = axis_v
-        self.axis_w = axis_w
-        self.block_size = block_size
-        self._shape = shape
+    shape: Triple
+    axis_u: Vector = (1, 0, 0)
+    axis_v: Vector = (0, 1, 0)
+    axis_w: Vector = (0, 0, 1)
+    srs: Optional[str] = None  # Spatial Reference System, e.g. EPSG code
 
     def __repr__(self):
         return f"RegularGeometry: {self.summary}"
@@ -448,3 +439,44 @@ class RegularGeometry(Geometry):
         nearest_z = round((z - ref_z) / dz) * dz + ref_z
 
         return nearest_x, nearest_y, nearest_z
+
+    def is_compatible(self, other: 'RegularGeometry') -> True:
+        """Check if the geometry is compatible with another RegularGeometry.
+
+        Args:
+            other: The other RegularGeometry to check compatibility with.
+
+        Returns:
+            bool: True if the geometries are compatible, False otherwise.
+
+        """
+
+        if self.block_size != other.block_size:
+            self._logger.warning(f"Block size {self.block_size} != {other.block_size}.")
+            return False
+        if self.shape != other.shape:
+            self._logger.warning(f"Shape {self.shape} != {other.shape}.")
+            return False
+        if self.axis_u != other.axis_u:
+            self._logger.warning(f"Axis {self.axis_u} != {other.axis_u}.")
+            return False
+        if self.axis_v != other.axis_v:
+            self._logger.warning(f"Axis {self.axis_v} != {other.axis_v}.")
+            return False
+        if self.axis_w != other.axis_w:
+            self._logger.warning(f"Axis {self.axis_w} != {other.axis_w}.")
+            return False
+        x_offset = (self.corner[0] - other.corner[0]) / self.block_size[0]
+        if x_offset != int(x_offset):
+            self._logger.warning(f"Incompatibility in x dimension: {x_offset} != {int(x_offset)}.")
+            return False
+        y_offset = (self.corner[1] - other.corner[1]) / self.block_size[1]
+        if y_offset != int(y_offset):
+            self._logger.warning(f"Incompatibility in y dimension: {y_offset} != {int(y_offset)}.")
+            return False
+        z_offset = (self.corner[2] - other.corner[2]) / self.block_size[2]
+        if z_offset != int(z_offset):
+            self._logger.warning(f"Incompatibility in z dimension: {z_offset} != {int(z_offset)}.")
+            return False
+        return True
+
