@@ -106,3 +106,15 @@ def test_large_files_with_progress():
         assert result["num_rows_match"] is True
         assert result["num_rows_left"] == 100000
         assert result["num_rows_right"] == 100000
+
+def test_different_column_types():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        f1 = os.path.join(tmpdir, "a.parquet")
+        f2 = os.path.join(tmpdir, "b.parquet")
+        make_parquet_file({"a": [1, 2, 3]}, f1)
+        make_parquet_file({"a": ["1", "2", "3"]}, f2)  # Different type (int vs str)
+        result = compare_parquet_files(f1, f2)
+        assert result["metadata"] is False
+        assert result["columns"]["a"] is False
+        assert result["dtypes"]["a"]["left"] == "int64"
+        assert result["dtypes"]["a"]["right"] == "string"

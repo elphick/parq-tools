@@ -40,10 +40,19 @@ def compare_parquet_files(file1, file2, chunk_size=10000, show_progress=False):
     result['missing_columns']['right_only'] = sorted(list(cols2 - cols1))
     all_cols = cols1 | cols2
 
+    # Compare column dtypes
+    result['dtypes'] = {}
+    for col in all_cols:
+        left_dtype = str(pf1.schema_arrow.field(col).type) if col in cols1 else None
+        right_dtype = str(pf2.schema_arrow.field(col).type) if col in cols2 else None
+        match = (left_dtype == right_dtype) and (left_dtype is not None)
+        result['dtypes'][col] = {'left': left_dtype, 'right': right_dtype, 'match': match}
+
     # Compare row counts
     result['num_rows_left'] = pf1.metadata.num_rows
     result['num_rows_right'] = pf2.metadata.num_rows
     result['num_rows_match'] = pf1.metadata.num_rows == pf2.metadata.num_rows
+
 
     try:
         from tqdm import tqdm
