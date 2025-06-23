@@ -1,2 +1,0 @@
-from .demo_block_model import create_demo_blockmodel
-from .spatial_encoding import encode_coordinates, decode_coordinates

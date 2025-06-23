@@ -165,3 +165,43 @@ def test_lazy_dataframe_dtypes_empty(tmp_path):
     _ = lazy_df['a']
     assert 'a' in lazy_df._loaded_columns
     assert (lazy_df['a'] == pd.Series([], dtype='float64')).all()
+
+def test_save_and_load_lazy_dataframe(tmp_path):
+    df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
+    file_path = make_parquet(tmp_path, df)
+    lazy_df = LazyParquetDataFrame(file_path)
+
+    # Save the lazy DataFrame to a new file
+    new_file_path = os.path.join(tmp_path, "lazy_saved.parquet")
+    lazy_df.to_parquet(new_file_path)
+
+    # Load the saved DataFrame
+    loaded_lazy_df = LazyParquetDataFrame(new_file_path)
+
+    # Check if the data matches
+    pd.testing.assert_frame_equal(loaded_lazy_df.to_pandas(), df)
+
+def test_save_method(tmp_path):
+    df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
+    file_path = make_parquet(tmp_path, df)
+    lazy_df = LazyParquetDataFrame(file_path)
+
+    # add a column to ensure save works with extra columns
+    lazy_df['c'] = [7, 8, 9]
+
+    # Save the lazy DataFrame to a new file
+    new_file_path = os.path.join(tmp_path, "lazy_saved.parquet")
+    lazy_df.save(new_file_path)
+
+    # Check if the saved file exists
+    assert os.path.exists(new_file_path)
+
+    # Load the saved DataFrame
+    loaded_lazy_df = LazyParquetDataFrame(new_file_path)
+
+    # check the columns
+    assert list(loaded_lazy_df.columns) == ['a', 'b', 'c']
+
+    # Check if the data matches
+    expected_data = {'a': [1, 2, 3], 'b': [4, 5, 6], 'c': [7, 8, 9]}
+    pd.testing.assert_frame_equal(loaded_lazy_df.to_pandas(), pd.DataFrame(expected_data))

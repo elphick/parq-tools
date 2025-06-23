@@ -1,8 +1,8 @@
-import tempfile
-import pytest
-from pathlib import Path
 import pandas as pd
-from parq_tools.block_models.utils.demo_block_model import create_demo_blockmodel
+import pytest
+
+from parq_tools.utils.demo_block_model import create_demo_blockmodel
+
 
 @pytest.fixture(scope="session")
 def example_parquet_file(tmp_path_factory):

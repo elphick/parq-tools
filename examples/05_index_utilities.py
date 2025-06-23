@@ -21,7 +21,7 @@ import pyarrow.dataset as ds
 from pathlib import Path
 
 from parq_tools import sort_parquet_file, reindex_parquet, validate_index_alignment
-from parq_tools.block_models.utils.demo_block_model import create_demo_blockmodel
+from parq_tools.utils.demo_block_model import create_demo_blockmodel
 
 # %%
 #

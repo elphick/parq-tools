@@ -13,7 +13,7 @@ import pandas as pd
 from pathlib import Path
 
 from parq_tools import ParquetProfileReport
-from parq_tools.block_models.utils import create_demo_blockmodel
+from parq_tools.utils.demo_block_model import create_demo_blockmodel
 from parq_tools.utils.memory_utils import parquet_memory_usage, print_parquet_memory_usage
 
 # %%

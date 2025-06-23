@@ -6,7 +6,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 from parq_tools.parq_schema_tools import rename_and_update_metadata
-from parq_tools.block_models.utils.demo_block_model import create_demo_blockmodel
+from parq_tools.utils.demo_block_model import create_demo_blockmodel
 
 
 @pytest.mark.performance

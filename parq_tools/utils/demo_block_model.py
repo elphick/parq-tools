@@ -47,20 +47,22 @@ def create_demo_blockmodel(shape: tuple[int, int, int] = (3, 3, 3),
         'x': xx_flat_c,
         'y': yy_flat_c,
         'z': zz_flat_c,
-        'c_style_xyz': c_order_xyz})
+        'c_order_xyz': c_order_xyz})
 
     # Set the index to x, y, z
     df.set_index(keys=['x', 'y', 'z'], inplace=True)
     df.sort_index(level=['x', 'y', 'z'], inplace=True)
+    # create the f_order_zyx column
     df.sort_index(level=['z', 'y', 'x'], inplace=True)
-    df['f_style_zyx'] = c_order_xyz
+    df['f_order_zyx'] = c_order_xyz
+    # set order back to c_order_xyz
     df.sort_index(level=['x', 'y', 'z'], inplace=True)
 
     df['depth'] = surface_rl - zz_flat_c
 
     # Check the ordering - confirm that the c_order_xyz and f_order_zyx columns are in the correct order
-    assert np.array_equal(df.sort_index(level=['x', 'y', 'z'])['c_style_xyz'].values, np.arange(num_blocks))
-    assert np.array_equal(df.sort_index(level=['z', 'y', 'x'])['f_style_zyx'].values, np.arange(num_blocks))
+    assert np.array_equal(df.sort_index(level=['x', 'y', 'z'])['c_order_xyz'].values, np.arange(num_blocks))
+    assert np.array_equal(df.sort_index(level=['z', 'y', 'x'])['f_order_zyx'].values, np.arange(num_blocks))
 
     # TODO: remove this temp code
     # drop a single record to test sparse input

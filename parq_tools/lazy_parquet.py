@@ -1,6 +1,8 @@
+from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+import pyarrow as pa
 import pyarrow.parquet as pq
 
 
@@ -108,11 +110,20 @@ class LazyParquetDataFrame:
         return df
 
     def iter_chunks(self, batch_size=100_000, columns=None):
-        """Yield pandas DataFrames in row-wise chunks from the Parquet file, preserving index."""
+        """Yield pandas DataFrames in row-wise chunks, including extra columns."""
         pf = pq.ParquetFile(self.path)
         start = 0
-        for batch in pf.iter_batches(batch_size=batch_size, columns=columns or self._column_order):
+        columns = columns or self._column_order
+        parquet_columns = [c for c in columns if c in self._schema.names]
+        extra_columns = [c for c in columns if c in self._extra_columns]
+        for batch in pf.iter_batches(batch_size=batch_size, columns=parquet_columns):
             df = batch.to_pandas()
+            # Add extra columns, sliced to the current chunk
+            for col in extra_columns:
+                col_data = pd.Series(self._extra_columns[col][start:start + len(df)])
+                df[col] = col_data.reset_index(drop=True)
+            # Reorder columns
+            df = df[columns]
             # Set index to the corresponding slice of self._index
             df.index = self._index[start:start + len(df)]
             start += len(df)
@@ -156,7 +167,7 @@ class LazyParquetDataFrame:
             self._column_order.append(key)
         self._invalidate_cache()
 
-    def add_column(self, name, data, position=None):
+    def add_column(self, name: str, data, position=None):
         """Add a new column to the DataFrame."""
         self._extra_columns[name] = data
         if position is None:
@@ -165,14 +176,27 @@ class LazyParquetDataFrame:
             self._column_order.insert(position, name)
         self._invalidate_cache()
 
-    def head(self, n=5):
+    def head(self, n: int = 5):
         """Return the first n rows of the DataFrame."""
         return pq.read_table(self.path, columns=self._schema.names).to_pandas().head(n)
 
-    def to_parquet(self, path):
+    def to_parquet(self, path: Path):
         """Write the DataFrame to a Parquet file."""
         df = self.to_pandas()
         df.to_parquet(path)
+
+    def save(self, path=None, batch_size=100_000):
+        """Save the DataFrame to Parquet in chunks to reduce memory usage."""
+        target = path or self.path
+        writer = None
+        for chunk in self.iter_chunks(batch_size=batch_size):
+            table = pa.Table.from_pandas(chunk)
+            if writer is None:
+                writer = pq.ParquetWriter(target, table.schema)
+            writer.write_table(table)
+        if writer is not None:
+            writer.close()
+        self._invalidate_cache()
 
     def _update_from_pandas(self, df):
         """Update the internal state from a pandas DataFrame."""
