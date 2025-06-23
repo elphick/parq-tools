@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from pathlib import Path
 from parq_tools.utils.file_utils import atomic_file_copy
@@ -32,6 +34,7 @@ def test_force_copy(tmp_path):
     create_file(src, b"abc")
     create_file(dst, b"abc")
     mtime_before = dst.stat().st_mtime
+    time.sleep(1)  # Ensure mtime changes
     atomic_file_copy(src, dst, force=True)
     assert dst.read_bytes() == b"abc"
     assert dst.stat().st_mtime != mtime_before  # Overwritten
