@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Usage &mdash; parq-tools  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=61a4c737" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=1a8b2067" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Glossary" href="../glossary/glossary.html" />
+    <link rel="prev" title="Archive Extraction" href="07_archive_extraction.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            parq-tools
+          </a>
+              <div class="version">
+                0.3.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../usage/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Example Gallery</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="01_filtering.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="02_wide_concatenation.html">Wide Concatenation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="03_tall_concatenation.html">Tall Concatenation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="04_renaming.html">Renaming and Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="05_index_utilities.html">Index Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="06_profiling.html">Parquet Profiling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="07_archive_extraction.html">Archive Extraction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Memory Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#create-a-parquet-file-for-profiling">Create a Parquet file for profiling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#memory-usage-reports">Memory usage reports</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#full-report-with-index-marking">Full report with index marking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#report-without-pandas-memory-usage">Report without pandas memory usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#report-for-a-subset-of-columns">Report for a subset of columns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#accessing-the-structured-dictionary">Accessing the structured dictionary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license/license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">parq-tools</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Example Gallery</a></li>
+      <li class="breadcrumb-item active">Memory Usage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/auto_examples/08_memory_usage.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-08-memory-usage-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="memory-usage">
+<span id="sphx-glr-auto-examples-08-memory-usage-py"></span><h1>Memory Usage<a class="headerlink" href="#memory-usage" title="Link to this heading"></a></h1>
+<p>Parquet files are compressed columnar data files.  This is great for storage and performance, but
+it can be useful to understand memory by column usage when working with large datasets.  This enables
+the user to optimise their data processing and storage strategies.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParquetProfileReport</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.demo_block_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_demo_blockmodel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.memory_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">parquet_memory_usage</span><span class="p">,</span> <span class="n">print_parquet_memory_usage</span>
+</pre></div>
+</div>
+<section id="create-a-parquet-file-for-profiling">
+<h2>Create a Parquet file for profiling<a class="headerlink" href="#create-a-parquet-file-for-profiling" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">temp_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">())</span> <span class="o">/</span> <span class="s2">&quot;memory_usage_example&quot;</span>
+<span class="n">temp_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">parquet_file_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;test_blockmodel.parquet&quot;</span>
+
+<span class="c1"># Create a reasonably large model example</span>
+<span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">create_demo_blockmodel</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">block_size</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+                                          <span class="n">corner</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="c1"># Add a categorical column and a string column</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">&quot;depth_as_string&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;depth&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="n">df</span><span class="p">[</span><span class="s2">&quot;depth_as_category&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;depth&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">))</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Shape:&quot;</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Shape: (3000000, 5)
+</pre></div>
+</div>
+</section>
+<section id="memory-usage-reports">
+<h2>Memory usage reports<a class="headerlink" href="#memory-usage-reports" title="Link to this heading"></a></h2>
+<p>Generate a memory usage report for the Parquet file, various ways.</p>
+<section id="full-report-with-index-marking">
+<h3>Full report with index marking<a class="headerlink" href="#full-report-with-index-marking" title="Link to this heading"></a></h3>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">report</span> <span class="o">=</span> <span class="n">parquet_memory_usage</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">,</span> <span class="n">index_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Full memory usage report (with pandas):&quot;</span><span class="p">)</span>
+<span class="n">print_parquet_memory_usage</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Full memory usage report (with pandas):
+Shape: (3000000, 8)
+Total compressed:   27.9 MB
+Total decompressed (Arrow):  167.5 MB
+Total pandas:  294.4 MB
+
+Per-column breakdown:
+Column               Dtype             Compressed        Arrow       Pandas Dtype details
+c_order_xyz          int64                12.2 MB      23.2 MB      22.9 MB
+f_order_zyx          int64                15.2 MB      23.2 MB      22.9 MB
+depth                double              136.1 KB      23.2 MB      22.9 MB
+depth_as_string      string              135.9 KB      25.1 MB     153.9 MB
+depth_as_category    dictionary&lt;&gt;        135.8 KB       2.9 MB       3.2 MB values=string, indices=int8, ordered=0
+x*                   double                2.8 KB      23.2 MB      22.9 MB
+y*                   double                6.6 KB      23.2 MB      22.9 MB
+z*                   double              136.1 KB      23.2 MB      22.9 MB
+</pre></div>
+</div>
+</section>
+<section id="report-without-pandas-memory-usage">
+<h3>Report without pandas memory usage<a class="headerlink" href="#report-without-pandas-memory-usage" title="Link to this heading"></a></h3>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">report_no_pandas</span> <span class="o">=</span> <span class="n">parquet_memory_usage</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">,</span> <span class="n">report_pandas</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Memory usage report (Arrow only, no pandas):&quot;</span><span class="p">)</span>
+<span class="n">print_parquet_memory_usage</span><span class="p">(</span><span class="n">report_no_pandas</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Memory usage report (Arrow only, no pandas):
+Shape: (3000000, 8)
+Total compressed:   27.9 MB
+Total decompressed (Arrow):  167.5 MB
+
+Per-column breakdown:
+Column               Dtype             Compressed        Arrow       Pandas Dtype details
+c_order_xyz          int64                12.2 MB      23.2 MB            -
+f_order_zyx          int64                15.2 MB      23.2 MB            -
+depth                double              136.1 KB      23.2 MB            -
+depth_as_string      string              135.9 KB      25.1 MB            -
+depth_as_category    dictionary&lt;&gt;        135.8 KB       2.9 MB            - values=string, indices=int8, ordered=0
+x                    double                2.8 KB      23.2 MB            -
+y                    double                6.6 KB      23.2 MB            -
+z                    double              136.1 KB      23.2 MB            -
+</pre></div>
+</div>
+</section>
+<section id="report-for-a-subset-of-columns">
+<h3>Report for a subset of columns<a class="headerlink" href="#report-for-a-subset-of-columns" title="Link to this heading"></a></h3>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">subset_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">,</span> <span class="s2">&quot;depth_as_category&quot;</span><span class="p">]</span>
+<span class="n">report_subset</span> <span class="o">=</span> <span class="n">parquet_memory_usage</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">subset_cols</span><span class="p">,</span> <span class="n">index_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Memory usage report (subset of columns):&quot;</span><span class="p">)</span>
+<span class="n">print_parquet_memory_usage</span><span class="p">(</span><span class="n">report_subset</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Memory usage report (subset of columns):
+Shape: (3000000, 4)
+Total compressed:  281.3 KB
+Total decompressed (Arrow):   72.6 MB
+Total pandas:   71.8 MB
+
+Per-column breakdown:
+Column               Dtype             Compressed        Arrow       Pandas Dtype details
+x*                   double                2.8 KB      23.2 MB      22.9 MB
+y*                   double                6.6 KB      23.2 MB      22.9 MB
+depth                double              136.1 KB      23.2 MB      22.9 MB
+depth_as_category    dictionary&lt;&gt;        135.8 KB       2.9 MB       3.2 MB values=string, indices=int8, ordered=0
+</pre></div>
+</div>
+</section>
+<section id="accessing-the-structured-dictionary">
+<h3>Accessing the structured dictionary<a class="headerlink" href="#accessing-the-structured-dictionary" title="Link to this heading"></a></h3>
+<p>Useful for programmatic use</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Accessing the structured dictionary:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;columns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">subset_cols</span><span class="p">})</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Accessing the structured dictionary:
+{&#39;depth&#39;: {&#39;compressed_bytes&#39;: 139375, &#39;decompressed_bytes&#39;: 24375000, &#39;pandas_bytes&#39;: 24000000, &#39;dtype&#39;: &#39;double&#39;, &#39;is_index&#39;: False}, &#39;depth_as_category&#39;: {&#39;compressed_bytes&#39;: 139040, &#39;decompressed_bytes&#39;: 3028096, &#39;pandas_bytes&#39;: 3305472, &#39;dtype&#39;: &#39;dictionary&lt;values=string, indices=int8, ordered=0&gt;&#39;, &#39;is_index&#39;: False}, &#39;x&#39;: {&#39;compressed_bytes&#39;: 2820, &#39;decompressed_bytes&#39;: 24375000, &#39;pandas_bytes&#39;: 24000000, &#39;dtype&#39;: &#39;double&#39;, &#39;is_index&#39;: True}, &#39;y&#39;: {&#39;compressed_bytes&#39;: 6804, &#39;decompressed_bytes&#39;: 24375000, &#39;pandas_bytes&#39;: 24000000, &#39;dtype&#39;: &#39;double&#39;, &#39;is_index&#39;: True}}
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.267 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-08-memory-usage-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/0944286f42419d4fca19b3f22395084a/08_memory_usage.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">08_memory_usage.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/e2483af14361b3e56ac7bdf9ef4a769b/08_memory_usage.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">08_memory_usage.py</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="07_archive_extraction.html" class="btn btn-neutral float-left" title="Archive Extraction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../glossary/glossary.html" class="btn btn-neutral float-right" title="Glossary" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Greg Elphick.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

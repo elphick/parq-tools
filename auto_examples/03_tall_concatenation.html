@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tall Concatenation &mdash; parq-tools  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=61a4c737" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=1a8b2067" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Renaming and Metadata" href="04_renaming.html" />
+    <link rel="prev" title="Wide Concatenation" href="02_wide_concatenation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            parq-tools
+          </a>
+              <div class="version">
+                0.3.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../usage/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Example Gallery</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="01_filtering.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="02_wide_concatenation.html">Wide Concatenation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tall Concatenation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#create-example-parquet-files">Create Example Parquet Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tall-concatenation-with-pandas">Tall Concatenation with Pandas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tall-concatenation-with-parq-tools">Tall Concatenation with Parq Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compare-the-results">Compare the Results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tall-concatenation-with-filters">Tall Concatenation with Filters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#concatenate-by-function">Concatenate by function</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="04_renaming.html">Renaming and Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="05_index_utilities.html">Index Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="06_profiling.html">Parquet Profiling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="07_archive_extraction.html">Archive Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="08_memory_usage.html">Memory Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license/license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">parq-tools</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Example Gallery</a></li>
+      <li class="breadcrumb-item active">Tall Concatenation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/auto_examples/03_tall_concatenation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-03-tall-concatenation-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="tall-concatenation">
+<span id="sphx-glr-auto-examples-03-tall-concatenation-py"></span><h1>Tall Concatenation<a class="headerlink" href="#tall-concatenation" title="Link to this heading"></a></h1>
+<p>This example demonstrates how to concatenate multiple Parquet files along rows (tall concatenation)
+using the <cite>parq_tools</cite> library. It also shows how to achieve the same result with <cite>pandas.concat</cite>
+and verifies that the outputs are equivalent.</p>
+<p>Tall concatenation combines all rows from each file, aligning columns by name. Columns missing in some files
+are filled with nulls.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParquetConcat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+</pre></div>
+</div>
+<section id="create-example-parquet-files">
+<h2>Create Example Parquet Files<a class="headerlink" href="#create-example-parquet-files" title="Link to this heading"></a></h2>
+<p>We create three example Parquet files with overlapping and unique columns.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_example_parquet</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="n">temp_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">())</span> <span class="o">/</span> <span class="s2">&quot;parquet_tall_concat_example&quot;</span>
+<span class="n">temp_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">data1</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
+    <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span>
+    <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">]</span>
+<span class="p">}</span>
+<span class="n">data2</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span>
+    <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span>
+    <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">]</span>
+<span class="p">}</span>
+<span class="n">data3</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span>
+    <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">15</span><span class="p">],</span>
+    <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;I&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">],</span>
+    <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;J&quot;</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;example_data1.parquet&quot;</span><span class="p">,</span>
+    <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;example_data2.parquet&quot;</span><span class="p">,</span>
+    <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;example_data3.parquet&quot;</span>
+<span class="p">]</span>
+
+<span class="n">create_example_parquet</span><span class="p">(</span><span class="n">input_files</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data1</span><span class="p">)</span>
+<span class="n">create_example_parquet</span><span class="p">(</span><span class="n">input_files</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">data2</span><span class="p">)</span>
+<span class="n">create_example_parquet</span><span class="p">(</span><span class="n">input_files</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">data3</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="tall-concatenation-with-pandas">
+<h2>Tall Concatenation with Pandas<a class="headerlink" href="#tall-concatenation-with-pandas" title="Link to this heading"></a></h2>
+<p>This approach loads all data into memory and concatenates along rows.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">index_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">]</span>
+
+<span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">]</span>
+<span class="n">tall_result_pandas</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_cols</span><span class="p">)</span>
+<span class="n">tall_result_pandas</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>a</th>
+      <th>b</th>
+      <th>c</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <th>4</th>
+      <th>7</th>
+      <td>A</td>
+      <td>1.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <th>5</th>
+      <th>8</th>
+      <td>B</td>
+      <td>2.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <th>6</th>
+      <th>9</th>
+      <td>C</td>
+      <td>3.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <th>7</th>
+      <th>10</th>
+      <td>D</td>
+      <td>3.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <th>8</th>
+      <th>11</th>
+      <td>E</td>
+      <td>4.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <th>9</th>
+      <th>12</th>
+      <td>F</td>
+      <td>5.0</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <th>10</th>
+      <th>13</th>
+      <td>G</td>
+      <td>6.0</td>
+      <td>J</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <th>11</th>
+      <th>14</th>
+      <td>H</td>
+      <td>7.0</td>
+      <td>K</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <th>12</th>
+      <th>15</th>
+      <td>I</td>
+      <td>8.0</td>
+      <td>L</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="tall-concatenation-with-parq-tools">
+<h2>Tall Concatenation with Parq Tools<a class="headerlink" href="#tall-concatenation-with-parq-tools" title="Link to this heading"></a></h2>
+<p>This approach is more efficient for large datasets, as it processes data in chunks.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">output_tall</span> <span class="o">=</span> <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;tall_concatenated.parquet&quot;</span>
+<span class="n">tall_concat</span> <span class="o">=</span> <span class="n">ParquetConcat</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="n">input_files</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">tall_concat</span><span class="o">.</span><span class="n">concat_to_file</span><span class="p">(</span><span class="n">output_path</span><span class="o">=</span><span class="n">output_tall</span><span class="p">)</span>
+
+<span class="n">tall_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_tall</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_cols</span><span class="p">)</span>
+<span class="n">tall_result</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>a</th>
+      <th>b</th>
+      <th>c</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <th>4</th>
+      <th>7</th>
+      <td>A</td>
+      <td>1.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <th>5</th>
+      <th>8</th>
+      <td>B</td>
+      <td>2.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <th>6</th>
+      <th>9</th>
+      <td>C</td>
+      <td>3.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <th>7</th>
+      <th>10</th>
+      <td>D</td>
+      <td>3.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <th>8</th>
+      <th>11</th>
+      <td>E</td>
+      <td>4.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <th>9</th>
+      <th>12</th>
+      <td>F</td>
+      <td>5.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <th>10</th>
+      <th>13</th>
+      <td>G</td>
+      <td>6.0</td>
+      <td>J</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <th>11</th>
+      <th>14</th>
+      <td>H</td>
+      <td>7.0</td>
+      <td>K</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <th>12</th>
+      <th>15</th>
+      <td>I</td>
+      <td>8.0</td>
+      <td>L</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="compare-the-results">
+<h2>Compare the Results<a class="headerlink" href="#compare-the-results" title="Link to this heading"></a></h2>
+<p>Ensure the outputs from both methods are equivalent.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_frame_equal</span><span class="p">(</span><span class="n">tall_result</span><span class="p">,</span> <span class="n">tall_result_pandas</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/runner/work/parq-tools/parq-tools/examples/03_tall_concatenation.py:97: FutureWarning: Mismatched null-like values None and nan found. In a future version, pandas equality-testing functions (e.g. assert_frame_equal) will consider these not-matching and raise.
+  pd.testing.assert_frame_equal(tall_result, tall_result_pandas)
+</pre></div>
+</div>
+</section>
+<section id="tall-concatenation-with-filters">
+<h2>Tall Concatenation with Filters<a class="headerlink" href="#tall-concatenation-with-filters" title="Link to this heading"></a></h2>
+<p>You can also apply a filter expression during concatenation.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">filter_query</span> <span class="o">=</span> <span class="s2">&quot;x &gt; 4 and b &gt;= 5.0&quot;</span>
+<span class="n">output_filtered_tall</span> <span class="o">=</span> <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;filtered_tall_concatenated.parquet&quot;</span>
+<span class="n">tall_concat</span><span class="o">.</span><span class="n">concat_to_file</span><span class="p">(</span>
+    <span class="n">output_path</span><span class="o">=</span><span class="n">output_filtered_tall</span><span class="p">,</span>
+    <span class="n">filter_query</span><span class="o">=</span><span class="n">filter_query</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="n">filtered_tall_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_filtered_tall</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_cols</span><span class="p">)</span>
+<span class="n">filtered_tall_result</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>a</th>
+      <th>b</th>
+      <th>c</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>6</th>
+      <th>9</th>
+      <th>12</th>
+      <td>F</td>
+      <td>5.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <th>10</th>
+      <th>13</th>
+      <td>G</td>
+      <td>6.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <th>11</th>
+      <th>14</th>
+      <td>H</td>
+      <td>7.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <th>12</th>
+      <th>15</th>
+      <td>I</td>
+      <td>8.0</td>
+      <td>None</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="concatenate-by-function">
+<h2>Concatenate by function<a class="headerlink" href="#concatenate-by-function" title="Link to this heading"></a></h2>
+<p>You can also concatenate with a function, rather than using the class directly.  The same filtering options are
+available, and the function will handle the concatenation in a memory-efficient way.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="c1"># concatenate with the function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">concat_parquet_files</span>
+
+<span class="n">concat_parquet_files</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="n">input_files</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">output_tall</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">&#39;.by_function.parquet&#39;</span><span class="p">),</span>
+                     <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">index_columns</span><span class="o">=</span><span class="n">index_cols</span><span class="p">)</span>
+<span class="c1"># Read the filtered concatenated file</span>
+<span class="n">filtered_wide_function_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_tall</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">&#39;.by_function.parquet&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span>
+    <span class="n">index_cols</span><span class="p">)</span>
+<span class="n">filtered_wide_function_result</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>a</th>
+      <th>b</th>
+      <th>c</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <th>4</th>
+      <th>7</th>
+      <td>A</td>
+      <td>1.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <th>5</th>
+      <th>8</th>
+      <td>B</td>
+      <td>2.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <th>6</th>
+      <th>9</th>
+      <td>C</td>
+      <td>3.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <th>7</th>
+      <th>10</th>
+      <td>D</td>
+      <td>3.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <th>8</th>
+      <th>11</th>
+      <td>E</td>
+      <td>4.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <th>9</th>
+      <th>12</th>
+      <td>F</td>
+      <td>5.0</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <th>10</th>
+      <th>13</th>
+      <td>G</td>
+      <td>6.0</td>
+      <td>J</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <th>11</th>
+      <th>14</th>
+      <td>H</td>
+      <td>7.0</td>
+      <td>K</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <th>12</th>
+      <th>15</th>
+      <td>I</td>
+      <td>8.0</td>
+      <td>L</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.094 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-03-tall-concatenation-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/81464ec57408e6e655da5a1b0eb10b20/03_tall_concatenation.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">03_tall_concatenation.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/489e9834388040efd086329dfe4740c0/03_tall_concatenation.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">03_tall_concatenation.py</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="02_wide_concatenation.html" class="btn btn-neutral float-left" title="Wide Concatenation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="04_renaming.html" class="btn btn-neutral float-right" title="Renaming and Metadata" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Greg Elphick.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+parq\_tools.parq\_schema\_tools.rename\_and\_update\_metadata
+=============================================================
+
+.. currentmodule:: parq_tools.parq_schema_tools
+
+.. autofunction:: rename_and_update_metadata

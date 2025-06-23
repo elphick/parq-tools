@@ -1,0 +1,6 @@
+parq\_tools.utils.memory\_utils.parquet\_memory\_usage
+======================================================
+
+.. currentmodule:: parq_tools.utils.memory_utils
+
+.. autofunction:: parquet_memory_usage

@@ -1,0 +1,6 @@
+parq\_tools.utils.file\_utils.atomic\_output\_dir
+=================================================
+
+.. currentmodule:: parq_tools.utils.file_utils
+
+.. autofunction:: atomic_output_dir

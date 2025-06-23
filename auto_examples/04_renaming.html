@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Renaming and Metadata &mdash; parq-tools  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=61a4c737" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=1a8b2067" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Index Utilities" href="05_index_utilities.html" />
+    <link rel="prev" title="Tall Concatenation" href="03_tall_concatenation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            parq-tools
+          </a>
+              <div class="version">
+                0.3.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../usage/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Example Gallery</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="01_filtering.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="02_wide_concatenation.html">Wide Concatenation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="03_tall_concatenation.html">Tall Concatenation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Renaming and Metadata</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#create-a-parquet-file">Create a Parquet file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rename-columns">Rename columns</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#update-metadata">Update metadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#persisting-only-renamed-columns">Persisting only renamed columns</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="05_index_utilities.html">Index Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="06_profiling.html">Parquet Profiling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="07_archive_extraction.html">Archive Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="08_memory_usage.html">Memory Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license/license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">parq-tools</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Example Gallery</a></li>
+      <li class="breadcrumb-item active">Renaming and Metadata</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/auto_examples/04_renaming.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-04-renaming-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="renaming-and-metadata">
+<span id="sphx-glr-auto-examples-04-renaming-py"></span><h1>Renaming and Metadata<a class="headerlink" href="#renaming-and-metadata" title="Link to this heading"></a></h1>
+<p>A simple example to demonstrate how to rename columns in a parquet file.
+Additionally, we can update the metadata in the file - in this case we add column descriptions.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.parquet</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pq</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">rename_and_update_metadata</span>
+</pre></div>
+</div>
+<section id="create-a-parquet-file">
+<h2>Create a Parquet file<a class="headerlink" href="#create-a-parquet-file" title="Link to this heading"></a></h2>
+<p>Create a temporary parquet file for demonstration</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_parquet_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+    <span class="c1"># Define the dataset</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">),</span>  <span class="c1"># Index column</span>
+        <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span>  <span class="c1"># Index column</span>
+        <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span>  <span class="c1"># Index column</span>
+        <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;val</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">)],</span>  <span class="c1"># Supplementary column</span>
+        <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">)],</span>  <span class="c1"># Supplementary column</span>
+        <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="mi">3</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">)],</span>  <span class="c1"># Supplementary column</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Create a DataFrame</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_pydict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># Write the DataFrame to a Parquet file</span>
+    <span class="n">pq</span><span class="o">.</span><span class="n">write_table</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+
+
+<span class="n">parquet_file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">())</span> <span class="o">/</span> <span class="s2">&quot;example_data.parquet&quot;</span>
+<span class="n">create_parquet_file</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>View the file as a DataFrame</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">)</span>
+<span class="n">df</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th>a</th>
+      <th>b</th>
+      <th>c</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>11</td>
+      <td>21</td>
+      <td>val1</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>12</td>
+      <td>22</td>
+      <td>val2</td>
+      <td>4</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>13</td>
+      <td>23</td>
+      <td>val3</td>
+      <td>6</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>14</td>
+      <td>24</td>
+      <td>val4</td>
+      <td>8</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>15</td>
+      <td>25</td>
+      <td>val5</td>
+      <td>10</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>6</td>
+      <td>16</td>
+      <td>26</td>
+      <td>val6</td>
+      <td>12</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>7</td>
+      <td>17</td>
+      <td>27</td>
+      <td>val7</td>
+      <td>14</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>8</td>
+      <td>18</td>
+      <td>28</td>
+      <td>val8</td>
+      <td>16</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>9</td>
+      <td>19</td>
+      <td>29</td>
+      <td>val9</td>
+      <td>18</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>10</td>
+      <td>20</td>
+      <td>30</td>
+      <td>val10</td>
+      <td>20</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="rename-columns">
+<h2>Rename columns<a class="headerlink" href="#rename-columns" title="Link to this heading"></a></h2>
+<p>We can rename a selection of columns.  Here we assume we don’t want to rename the <cite>index</cite> columns.
+Assuming we have no knowledge of the column names, we’ll read them from the file schema.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">index_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">]</span>
+<span class="n">col_names</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetFile</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">)</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span>
+<span class="n">col_names</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[&#39;x&#39;, &#39;y&#39;, &#39;z&#39;, &#39;a&#39;, &#39;b&#39;, &#39;c&#39;]
+</pre></div>
+</div>
+<p>Create a mapping and rename the columns</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">new_col_names</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;new_</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">col_names</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">index_cols</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">]}</span>
+<span class="n">output_file_path</span> <span class="o">=</span> <span class="n">parquet_file_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;renamed_data.parquet&quot;</span>
+<span class="n">rename_and_update_metadata</span><span class="p">(</span><span class="n">input_path</span><span class="o">=</span><span class="n">parquet_file_path</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">output_file_path</span><span class="p">,</span>
+                           <span class="n">rename_map</span><span class="o">=</span><span class="n">new_col_names</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Processing:   0%|          | 0/10 [00:00&lt;?, ?rows/s]
+Processing: 100%|██████████| 10/10 [00:00&lt;00:00, 9358.11rows/s]
+</pre></div>
+</div>
+<p>Read the renamed file and display it</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">df_renamed</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_file_path</span><span class="p">)</span>
+<span class="n">df_renamed</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th>new_a</th>
+      <th>new_b</th>
+      <th>c</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>11</td>
+      <td>21</td>
+      <td>val1</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>12</td>
+      <td>22</td>
+      <td>val2</td>
+      <td>4</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>13</td>
+      <td>23</td>
+      <td>val3</td>
+      <td>6</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>14</td>
+      <td>24</td>
+      <td>val4</td>
+      <td>8</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>15</td>
+      <td>25</td>
+      <td>val5</td>
+      <td>10</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>6</td>
+      <td>16</td>
+      <td>26</td>
+      <td>val6</td>
+      <td>12</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>7</td>
+      <td>17</td>
+      <td>27</td>
+      <td>val7</td>
+      <td>14</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>8</td>
+      <td>18</td>
+      <td>28</td>
+      <td>val8</td>
+      <td>16</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>9</td>
+      <td>19</td>
+      <td>29</td>
+      <td>val9</td>
+      <td>18</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>10</td>
+      <td>20</td>
+      <td>30</td>
+      <td>val10</td>
+      <td>20</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="update-metadata">
+<h2>Update metadata<a class="headerlink" href="#update-metadata" title="Link to this heading"></a></h2>
+<p>We can also update the metadata in the file.  In this case we add descriptions to the renamed columns.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;This is the description of the dataset&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.1.0&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">column_descriptions</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;new_a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;This is the a column renamed&quot;</span><span class="p">},</span>
+                       <span class="s1">&#39;new_b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;This is the b column renamed&quot;</span><span class="p">},</span>
+                       <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;This is the original c column&quot;</span><span class="p">,</span>
+                             <span class="s1">&#39;unit_of_measure&#39;</span><span class="p">:</span> <span class="s2">&quot;unitless&quot;</span><span class="p">}}</span>
+<span class="n">rename_and_update_metadata</span><span class="p">(</span><span class="n">input_path</span><span class="o">=</span><span class="n">output_file_path</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">output_file_path</span><span class="p">,</span>
+                           <span class="n">rename_map</span><span class="o">=</span><span class="n">new_col_names</span><span class="p">,</span> <span class="n">table_metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">column_metadata</span><span class="o">=</span><span class="n">column_descriptions</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>First the file metadata</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">d_metadata</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">read_metadata</span><span class="p">(</span><span class="n">output_file_path</span><span class="p">)</span>
+<span class="n">d_metadata</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>&lt;pyarrow._parquet.FileMetaData object at 0x7f8089d6e6b0&gt;
+  created_by: parquet-cpp-arrow version 20.0.0
+  num_columns: 6
+  num_rows: 10
+  num_row_groups: 1
+  format_version: 2.6
+  serialized_size: 1911
+</pre></div>
+</div>
+<p>Now the table metadata</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">pf</span><span class="p">:</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetFile</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetFile</span><span class="p">(</span><span class="n">output_file_path</span><span class="p">)</span>
+<span class="n">table_metadata</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">to_arrow_schema</span><span class="p">()</span><span class="o">.</span><span class="n">metadata</span>
+<span class="n">decoded</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">decode</span><span class="p">():</span> <span class="n">v</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">table_metadata</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">decoded</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{
+  &quot;description&quot;: &quot;This is the description of the dataset&quot;,
+  &quot;version&quot;: &quot;0.1.0&quot;
+}
+</pre></div>
+</div>
+<p>Now the column metadata</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">arrow_schema</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">to_arrow_schema</span><span class="p">()</span>
+<span class="c1"># Extract column metadata</span>
+<span class="n">column_metadata</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">arrow_schema</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">col</span><span class="p">)</span><span class="o">.</span><span class="n">metadata</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">pf</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">}</span>
+<span class="c1"># Decode metadata</span>
+<span class="n">column_metadata_decoded</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">col</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">decode</span><span class="p">():</span> <span class="n">v</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span> <span class="k">if</span> <span class="n">meta</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">column_metadata</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="p">}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">column_metadata_decoded</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>{
+  &quot;x&quot;: {},
+  &quot;y&quot;: {},
+  &quot;z&quot;: {},
+  &quot;new_a&quot;: {
+    &quot;description&quot;: &quot;This is the a column renamed&quot;
+  },
+  &quot;new_b&quot;: {
+    &quot;description&quot;: &quot;This is the b column renamed&quot;
+  },
+  &quot;c&quot;: {
+    &quot;description&quot;: &quot;This is the original c column&quot;,
+    &quot;unit_of_measure&quot;: &quot;unitless&quot;
+  }
+}
+</pre></div>
+</div>
+</section>
+<section id="persisting-only-renamed-columns">
+<h2>Persisting only renamed columns<a class="headerlink" href="#persisting-only-renamed-columns" title="Link to this heading"></a></h2>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">new_col_names</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="s2">&quot;new_a&quot;</span><span class="p">}</span>
+<span class="n">output_file_path_renamed_only</span> <span class="o">=</span> <span class="n">parquet_file_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;renamed_data_only.parquet&quot;</span>
+<span class="n">rename_and_update_metadata</span><span class="p">(</span><span class="n">input_path</span><span class="o">=</span><span class="n">parquet_file_path</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">output_file_path_renamed_only</span><span class="p">,</span>
+                           <span class="n">rename_map</span><span class="o">=</span><span class="n">new_col_names</span><span class="p">,</span> <span class="n">return_all_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">df_renamed_only</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_file_path_renamed_only</span><span class="p">)</span>
+<span class="n">df_renamed_only</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>x</th>
+      <th>new_a</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>val1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>val2</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>val3</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>val4</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>val5</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>6</td>
+      <td>val6</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>7</td>
+      <td>val7</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>8</td>
+      <td>val8</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>9</td>
+      <td>val9</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>10</td>
+      <td>val10</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.018 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-04-renaming-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/05be642439a95256a85f94057bc64f9e/04_renaming.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">04_renaming.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/fc2fbe8bd2e61290f17e3738f1f8f068/04_renaming.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">04_renaming.py</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="03_tall_concatenation.html" class="btn btn-neutral float-left" title="Tall Concatenation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="05_index_utilities.html" class="btn btn-neutral float-right" title="Index Utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Greg Elphick.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

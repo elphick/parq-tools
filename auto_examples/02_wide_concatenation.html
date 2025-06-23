@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wide Concatenation &mdash; parq-tools  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=61a4c737" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=1a8b2067" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tall Concatenation" href="03_tall_concatenation.html" />
+    <link rel="prev" title="Filtering" href="01_filtering.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            parq-tools
+          </a>
+              <div class="version">
+                0.3.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../usage/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Example Gallery</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="01_filtering.html">Filtering</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Wide Concatenation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#perform-wide-concatenation-with-pandas">Perform Wide Concatenation with Pandas</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#perform-wide-concatenation-with-parq-tools">Perform Wide Concatenation with Parq Tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#wide-concatenation-with-filters">Wide concatenation with filters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#concatenate-by-function">Concatenate by function</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="03_tall_concatenation.html">Tall Concatenation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="04_renaming.html">Renaming and Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="05_index_utilities.html">Index Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="06_profiling.html">Parquet Profiling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="07_archive_extraction.html">Archive Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="08_memory_usage.html">Memory Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license/license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">parq-tools</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Example Gallery</a></li>
+      <li class="breadcrumb-item active">Wide Concatenation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/auto_examples/02_wide_concatenation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-02-wide-concatenation-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="wide-concatenation">
+<span id="sphx-glr-auto-examples-02-wide-concatenation-py"></span><h1>Wide Concatenation<a class="headerlink" href="#wide-concatenation" title="Link to this heading"></a></h1>
+<p>This example demonstrates how to wide concatenate multiple parquet files into new parquet files using the
+<cite>parq_tools</cite> library and compares the results with <cite>pandas.concat</cite>.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParquetConcat</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+
+<span class="c1"># Create a temporary directory for the output files</span>
+<span class="n">temp_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">())</span> <span class="o">/</span> <span class="s2">&quot;parquet_concat_example&quot;</span>
+<span class="n">temp_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Define the input Parquet files</span>
+<span class="n">input_files</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;example_data1.parquet&quot;</span><span class="p">,</span>
+    <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;example_data2.parquet&quot;</span><span class="p">,</span>
+    <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;example_data3.parquet&quot;</span>
+<span class="p">]</span>
+
+
+<span class="c1"># Create example Parquet files</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_example_parquet</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="c1"># Example data for the Parquet files</span>
+<span class="n">data1</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
+    <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span>
+    <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">data2</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
+    <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span>
+    <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">6.0</span><span class="p">,</span> <span class="mf">7.0</span><span class="p">,</span> <span class="mf">8.0</span><span class="p">],</span>
+    <span class="s2">&quot;c&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;I&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">data3</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
+    <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span>
+    <span class="s2">&quot;d&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;J&quot;</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c1"># Create the Parquet files</span>
+<span class="n">create_example_parquet</span><span class="p">(</span><span class="n">input_files</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data1</span><span class="p">)</span>
+<span class="n">create_example_parquet</span><span class="p">(</span><span class="n">input_files</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">data2</span><span class="p">)</span>
+<span class="n">create_example_parquet</span><span class="p">(</span><span class="n">input_files</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">data3</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="perform-wide-concatenation-with-pandas">
+<h2>Perform Wide Concatenation with Pandas<a class="headerlink" href="#perform-wide-concatenation-with-pandas" title="Link to this heading"></a></h2>
+<p>This approach is fine subject to memory constraints, as it loads all data into memory.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">index_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">]</span>
+
+<span class="n">dfs</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_cols</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">input_files</span><span class="p">]</span>
+<span class="n">wide_result_pandas</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">wide_result_pandas</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>a</th>
+      <th>b</th>
+      <th>c</th>
+      <th>d</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <th>4</th>
+      <th>7</th>
+      <td>A</td>
+      <td>6.0</td>
+      <td>G</td>
+      <td>J</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <th>5</th>
+      <th>8</th>
+      <td>B</td>
+      <td>7.0</td>
+      <td>H</td>
+      <td>K</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <th>6</th>
+      <th>9</th>
+      <td>C</td>
+      <td>8.0</td>
+      <td>I</td>
+      <td>L</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="perform-wide-concatenation-with-parq-tools">
+<h2>Perform Wide Concatenation with Parq Tools<a class="headerlink" href="#perform-wide-concatenation-with-parq-tools" title="Link to this heading"></a></h2>
+<p>This approach is more efficient for large datasets, as it processes data in chunks.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">output_wide</span> <span class="o">=</span> <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;wide_concatenated.parquet&quot;</span>
+
+<span class="c1"># Initialize the ParquetConcat class for wide concatenation</span>
+<span class="n">wide_concat</span> <span class="o">=</span> <span class="n">ParquetConcat</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="n">input_files</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">index_columns</span><span class="o">=</span><span class="n">index_cols</span><span class="p">)</span>
+
+<span class="c1"># Perform the concatenation</span>
+<span class="n">wide_concat</span><span class="o">.</span><span class="n">concat_to_file</span><span class="p">(</span><span class="n">output_path</span><span class="o">=</span><span class="n">output_wide</span><span class="p">)</span>
+
+<span class="c1"># Read the concatenated file</span>
+<span class="n">wide_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_wide</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_cols</span><span class="p">)</span>
+<span class="n">wide_result</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Validating index alignment:   0%|          | 0/1 [00:00&lt;?, ?it/s]
+Validating index alignment: 100%|██████████| 1/1 [00:00&lt;00:00, 5229.81it/s]
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>a</th>
+      <th>b</th>
+      <th>c</th>
+      <th>d</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <th>4</th>
+      <th>7</th>
+      <td>A</td>
+      <td>6.0</td>
+      <td>G</td>
+      <td>J</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <th>5</th>
+      <th>8</th>
+      <td>B</td>
+      <td>7.0</td>
+      <td>H</td>
+      <td>K</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <th>6</th>
+      <th>9</th>
+      <td>C</td>
+      <td>8.0</td>
+      <td>I</td>
+      <td>L</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /><p>Compare the results</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_frame_equal</span><span class="p">(</span><span class="n">wide_result</span><span class="p">,</span> <span class="n">wide_result_pandas</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="wide-concatenation-with-filters">
+<h2>Wide concatenation with filters<a class="headerlink" href="#wide-concatenation-with-filters" title="Link to this heading"></a></h2>
+<p>You can also apply filters during the concatenation process.
+The filter expression is pandas-like and can include index and non-index columns.
+This re-uses the <cite>ParquetConcat</cite> object created earlier to filter and concatenate the data.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">filter_query</span> <span class="o">=</span> <span class="s2">&quot;x &gt; 2 and b &gt; 6&quot;</span>
+<span class="n">output_filtered_wide</span> <span class="o">=</span> <span class="n">temp_dir</span> <span class="o">/</span> <span class="s2">&quot;filtered_wide_concatenated.parquet&quot;</span>
+<span class="c1"># Perform the concatenation with a filter</span>
+<span class="n">wide_concat</span><span class="o">.</span><span class="n">concat_to_file</span><span class="p">(</span>
+    <span class="n">output_path</span><span class="o">=</span><span class="n">output_filtered_wide</span><span class="p">,</span>
+    <span class="n">filter_query</span><span class="o">=</span><span class="n">filter_query</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;d&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="c1"># Read the filtered concatenated file</span>
+<span class="n">filtered_wide_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_filtered_wide</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_cols</span><span class="p">)</span>
+<span class="n">filtered_wide_result</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Validating index alignment:   0%|          | 0/1 [00:00&lt;?, ?it/s]
+Validating index alignment: 100%|██████████| 1/1 [00:00&lt;00:00, 6078.70it/s]
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>a</th>
+      <th>b</th>
+      <th>d</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>3</th>
+      <th>6</th>
+      <th>9</th>
+      <td>C</td>
+      <td>8.0</td>
+      <td>L</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="concatenate-by-function">
+<h2>Concatenate by function<a class="headerlink" href="#concatenate-by-function" title="Link to this heading"></a></h2>
+<p>You can also concatenate with a function, rather than using the class directly.  The same filtering options are
+available, and the function will handle the concatenation in a memory-efficient way.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="c1"># concatenate with the function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">concat_parquet_files</span>
+
+<span class="n">concat_parquet_files</span><span class="p">(</span><span class="n">files</span><span class="o">=</span><span class="n">input_files</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">output_wide</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">&#39;.by_function.parquet&#39;</span><span class="p">),</span>
+                     <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">index_columns</span><span class="o">=</span><span class="n">index_cols</span><span class="p">)</span>
+<span class="c1"># Read the filtered concatenated file</span>
+<span class="n">filtered_wide_function_result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">output_wide</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">&#39;.by_function.parquet&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span>
+    <span class="n">index_cols</span><span class="p">)</span>
+<span class="n">filtered_wide_function_result</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Validating index alignment:   0%|          | 0/1 [00:00&lt;?, ?it/s]
+Validating index alignment: 100%|██████████| 1/1 [00:00&lt;00:00, 6096.37it/s]
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>a</th>
+      <th>b</th>
+      <th>c</th>
+      <th>d</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1</th>
+      <th>4</th>
+      <th>7</th>
+      <td>A</td>
+      <td>6.0</td>
+      <td>G</td>
+      <td>J</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <th>5</th>
+      <th>8</th>
+      <td>B</td>
+      <td>7.0</td>
+      <td>H</td>
+      <td>K</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <th>6</th>
+      <th>9</th>
+      <td>C</td>
+      <td>8.0</td>
+      <td>I</td>
+      <td>L</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.070 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-02-wide-concatenation-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/70bb14206d9a4822130d25859a4d0595/02_wide_concatenation.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">02_wide_concatenation.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/4e02ddb6cf63585a1d41195feada8134/02_wide_concatenation.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">02_wide_concatenation.py</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="01_filtering.html" class="btn btn-neutral float-left" title="Filtering" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="03_tall_concatenation.html" class="btn btn-neutral float-right" title="Tall Concatenation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Greg Elphick.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

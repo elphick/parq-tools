@@ -1,0 +1,34 @@
+parq\_tools.utils.index\_utils
+==============================
+
+.. automodule:: parq_tools.utils.index_utils
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      dedup_index_parquet
+      reindex_parquet
+      sort_parquet_file
+      validate_index_alignment
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

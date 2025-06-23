@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>parq_tools.parq_concat &mdash; parq-tools  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=61a4c737" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=1a8b2067" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            parq-tools
+          </a>
+              <div class="version">
+                0.3.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../auto_examples/index.html">Example Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license/license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">parq-tools</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">parq_tools.parq_concat</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for parq_tools.parq_concat</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">parq_concat.py</span>
+
+<span class="sd">Utilities for concatenating Parquet files, supporting both row-wise (tall) and column-wise (wide) operations, with</span>
+<span class="sd">optional filtering, column selection, and progress tracking.</span>
+
+<span class="sd">Main APIs:</span>
+
+<span class="sd">- concat_parquet_files: Concatenate multiple Parquet files into a single file, with flexible options for axis,</span>
+<span class="sd">  filtering, and batching.</span>
+<span class="sd">- ParquetConcat: Class for advanced concatenation workflows, supporting batch processing, index alignment,</span>
+<span class="sd">  and metadata handling.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.parquet</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pq</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.dataset</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ds</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">atomic_output_file</span><span class="p">,</span> <span class="n">get_pandas_metadata</span><span class="p">,</span> <span class="n">merge_pandas_metadata</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.index_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_index_alignment</span>
+<span class="c1"># noinspection PyProtectedMember</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils._query_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_filter_expression</span><span class="p">,</span> <span class="n">get_filter_parser</span><span class="p">,</span> <span class="n">get_referenced_columns</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1"># noinspection PyUnresolvedReferences</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+    <span class="n">HAS_TQDM</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">HAS_TQDM</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> [</span><span class="si">%(levelname)s</span><span class="s2">] </span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="concat_parquet_files">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_concat.concat_parquet_files.html#parq_tools.parq_concat.concat_parquet_files">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">concat_parquet_files</span><span class="p">(</span><span class="n">files</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span>
+                         <span class="n">output_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+                         <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                         <span class="n">index_columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                         <span class="n">filter_query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                         <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">,</span>
+                         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Concatenate multiple Parquet files into a single file, supporting both row-wise and column-wise concatenation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        files (List[Path]): List of input Parquet file paths.</span>
+<span class="sd">        output_path (Path): Path to save the concatenated Parquet file.</span>
+<span class="sd">        axis (int): Axis along which to concatenate (0 for row-wise, 1 for column-wise).</span>
+<span class="sd">        index_columns (Optional[List[str]]): List of index columns for row-wise sorting after concatenation.</span>
+<span class="sd">        filter_query (Optional[str]): Filter expression to apply to the concatenated data.</span>
+<span class="sd">        columns (Optional[List[str]]): List of columns to include in the output.</span>
+<span class="sd">        batch_size (int): Number of rows per batch to process. Defaults to 100_00.</span>
+<span class="sd">        show_progress (bool): If True, displays a progress bar using `tqdm` (if installed).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the input files list is empty or if any file is not accessible.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">concat</span> <span class="o">=</span> <span class="n">ParquetConcat</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">index_columns</span><span class="p">,</span> <span class="n">show_progress</span><span class="p">)</span>
+    <span class="n">concat</span><span class="o">.</span><span class="n">concat_to_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">filter_query</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">show_progress</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="ParquetConcat">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_concat.ParquetConcat.html#parq_tools.parq_concat.ParquetConcat">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParquetConcat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A utility for concatenating Parquet files while supporting axis-based merging, filtering,</span>
+<span class="sd">    and progress tracking.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ParquetConcat.__init__">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_concat.ParquetConcat.html#parq_tools.parq_concat.ParquetConcat.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">index_columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes ParquetConcat with specified parameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            files (List[Path]): List of Parquet files to concatenate.</span>
+<span class="sd">            axis (int, optional): Concatenation axis (0 = row-wise, 1 = column-wise). Defaults to 0.</span>
+<span class="sd">            index_columns (Optional[List[str]], optional): Index columns for sorting. Defaults to None.</span>
+<span class="sd">            show_progress (bool, optional): If True, enables tqdm progress bar (if installed). Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">files</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The list of input files cannot be empty.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">files</span> <span class="o">=</span> <span class="n">files</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="n">axis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_columns</span> <span class="o">=</span> <span class="n">index_columns</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span> <span class="o">=</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">HAS_TQDM</span>  <span class="c1"># Only enable progress if tqdm is available</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Initializing ParquetConcat with </span><span class="si">%d</span><span class="s2"> files&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_input_files</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_input_files</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates that all input files exist and are readable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File not found or inaccessible: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Schema</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates that the requested columns exist in the schema.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            schema (pa.Schema): The schema to validate against.</span>
+<span class="sd">            columns (Optional[List[str]]): List of requested columns.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: The validated list of columns, including index columns.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any requested column is not found in the schema.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_columns</span>  <span class="c1"># If no columns are specified, return only index columns</span>
+
+        <span class="n">missing_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">missing_columns</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Columns </span><span class="si">{</span><span class="n">missing_columns</span><span class="si">}</span><span class="s2"> are missing in the schema. They will be added as null columns.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Include index columns in the final list</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_columns</span> <span class="o">+</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">]))</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_filter_columns</span><span class="p">(</span><span class="n">filter_query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">datasets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates that all columns referenced in the filter query exist in all datasets.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filter_query (Optional[str]): The filter query to validate.</span>
+<span class="sd">            datasets (List[ds.Dataset]): List of datasets to check.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any column in the filter query is missing in one or more datasets.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filter_query</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Extract referenced columns from the filter query</span>
+        <span class="n">referenced_columns</span> <span class="o">=</span> <span class="n">get_referenced_columns</span><span class="p">(</span><span class="n">filter_query</span><span class="p">)</span>
+
+        <span class="c1"># Check each dataset for the presence of all referenced columns</span>
+        <span class="n">missing_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">referenced_columns</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="n">missing_columns</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">missing_columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The filter query references columns that are missing in one or more datasets: </span><span class="si">{</span><span class="n">missing_columns</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="ParquetConcat.concat_to_file">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_concat.ParquetConcat.html#parq_tools.parq_concat.ParquetConcat.concat_to_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">concat_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">filter_query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                       <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">,</span>
+                       <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Concatenates input Parquet files and writes the result to a file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_path (Path): Destination path for the output Parquet file.</span>
+<span class="sd">            filter_query (Optional[str]): Filter expression to apply.</span>
+<span class="sd">            columns (Optional[List[str]]): List of columns to include in the output.</span>
+<span class="sd">            batch_size (int, optional): Number of rows per batch to process. Defaults to 1024.</span>
+<span class="sd">            show_progress (bool, optional): If True, displays a progress bar using `tqdm` (if installed). Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using low-memory iterative concatenation&quot;</span><span class="p">)</span>
+        <span class="n">datasets</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">dataset</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">]</span>
+        <span class="n">schemas</span> <span class="o">=</span> <span class="p">[</span><span class="n">dataset</span><span class="o">.</span><span class="n">schema</span> <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">]</span>
+
+        <span class="c1"># Create a unified schema that includes all columns from all datasets</span>
+        <span class="n">unified_schema</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">unify_schemas</span><span class="p">(</span><span class="n">schemas</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Unified schema: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">unified_schema</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">filter_query</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_filter</span><span class="p">(</span><span class="n">filter_query</span><span class="p">,</span> <span class="n">unified_schema</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># Wide concatenation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_concat_wide</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">unified_schema</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">filter_query</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">show_progress</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Tall concatenation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_concat_tall</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">unified_schema</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">filter_query</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">show_progress</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Concatenation along axis </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="si">}</span><span class="s2"> completed and saved to: %s&quot;</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_concat_wide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span> <span class="n">unified_schema</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Schema</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+                     <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">filter_query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handles wide concatenation (axis=1) in a memory-efficient manner by batch processing</span>
+
+<span class="sd">        Explicitly writes merged pandas metadata to the output file if it exists in any input file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting wide concatenation with batch processing&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Initialize columns if None</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span> <span class="ow">or</span> <span class="n">unified_schema</span><span class="o">.</span><span class="n">names</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_columns</span><span class="p">(</span><span class="n">unified_schema</span><span class="p">,</span> <span class="n">columns</span><span class="p">)</span>
+
+        <span class="n">validate_index_alignment</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">index_columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">index_columns</span><span class="p">)</span>
+
+        <span class="c1"># Collect and merge pandas metadata from all input files</span>
+        <span class="n">pandas_metadatas</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="n">get_pandas_metadata</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">meta</span><span class="p">:</span>
+                <span class="n">pandas_metadatas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
+        <span class="n">merged_pandas_meta</span> <span class="o">=</span> <span class="n">merge_pandas_metadata</span><span class="p">(</span><span class="n">pandas_metadatas</span><span class="p">)</span> <span class="k">if</span> <span class="n">pandas_metadatas</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="n">progress_bar</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Create iterators for all dataset scanners</span>
+            <span class="n">scanners</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="nb">iter</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">scanner</span><span class="p">(</span>
+                    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">],</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">to_batches</span><span class="p">())</span>
+                <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">datasets</span>
+            <span class="p">]</span>
+
+            <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_file</span><span class="p">:</span>
+                <span class="n">writer</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                        <span class="n">aligned_batches</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="n">all_exhausted</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">for</span> <span class="n">scanner</span> <span class="ow">in</span> <span class="n">scanners</span><span class="p">:</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">batch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">scanner</span><span class="p">)</span>
+                                <span class="n">table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_batches</span><span class="p">([</span><span class="n">batch</span><span class="p">])</span>
+                                <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">column_names</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_columns</span><span class="p">:</span>
+                                    <span class="k">continue</span>
+                                <span class="n">aligned_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+                                <span class="n">all_exhausted</span> <span class="o">=</span> <span class="kc">False</span>
+                            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                                <span class="n">aligned_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">all_exhausted</span><span class="p">:</span>
+                            <span class="k">break</span>
+                        <span class="n">combined_arrays</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="n">combined_fields</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">table</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">aligned_batches</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">table</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="k">continue</span>
+                            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="n">combined_arrays</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+                                <span class="n">combined_fields</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">table</span><span class="o">.</span><span class="n">schema</span><span class="p">):</span>
+                                    <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_columns</span><span class="p">:</span>
+                                        <span class="n">combined_arrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+                                        <span class="n">combined_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+                        <span class="n">combined_table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">(</span><span class="n">combined_arrays</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">pa</span><span class="o">.</span><span class="n">schema</span><span class="p">(</span><span class="n">combined_fields</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="n">filter_query</span><span class="p">:</span>
+                            <span class="n">filter_expression</span> <span class="o">=</span> <span class="n">build_filter_expression</span><span class="p">(</span><span class="n">filter_query</span><span class="p">,</span> <span class="n">combined_table</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
+                            <span class="n">combined_table</span> <span class="o">=</span> <span class="n">combined_table</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">filter_expression</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">writer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">schema</span> <span class="o">=</span> <span class="n">combined_table</span><span class="o">.</span><span class="n">schema</span>
+                            <span class="k">if</span> <span class="n">merged_pandas_meta</span><span class="p">:</span>
+                                <span class="n">new_meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{})</span>
+                                <span class="n">new_meta</span><span class="p">[</span><span class="sa">b</span><span class="s2">&quot;pandas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">merged_pandas_meta</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+                                <span class="n">schema</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">with_metadata</span><span class="p">(</span><span class="n">new_meta</span><span class="p">)</span>
+                                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Writing merged pandas metadata to output file.&quot;</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No pandas metadata found in input files.&quot;</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">HAS_TQDM</span> <span class="ow">and</span> <span class="n">progress_bar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">total_batches</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+                                    <span class="nb">sum</span><span class="p">(</span><span class="n">fragment</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">num_row_groups</span> <span class="k">for</span> <span class="n">fragment</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">get_fragments</span><span class="p">())</span>
+                                    <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">)</span>
+                                <span class="n">progress_bar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">total_batches</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing batches&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;batch&quot;</span><span class="p">)</span>
+                            <span class="n">writer</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetWriter</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+                        <span class="n">writer</span><span class="o">.</span><span class="n">write_table</span><span class="p">(</span><span class="n">combined_table</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">progress_bar</span><span class="p">:</span>
+                            <span class="n">progress_bar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">writer</span><span class="p">:</span>
+                        <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">progress_bar</span><span class="p">:</span>
+                <span class="n">progress_bar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_concat_tall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datasets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span> <span class="n">unified_schema</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Schema</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+                     <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">filter_query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                     <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handles tall concatenation (axis=0) in a memory-efficient manner by batch processing</span>
+
+<span class="sd">        Explicitly writes merged pandas metadata to the output file if it exists in any input file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">progress_bar</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Collect and merge pandas metadata from all input files</span>
+        <span class="n">pandas_metadatas</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="n">get_pandas_metadata</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">meta</span><span class="p">:</span>
+                <span class="n">pandas_metadatas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
+        <span class="n">merged_pandas_meta</span> <span class="o">=</span> <span class="n">merge_pandas_metadata</span><span class="p">(</span><span class="n">pandas_metadatas</span><span class="p">)</span> <span class="k">if</span> <span class="n">pandas_metadatas</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span> <span class="ow">or</span> <span class="n">unified_schema</span><span class="o">.</span><span class="n">names</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_columns</span><span class="p">(</span><span class="n">unified_schema</span><span class="p">,</span> <span class="n">columns</span><span class="p">)</span>
+            <span class="n">total_row_groups</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="n">fragment</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">num_row_groups</span> <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">datasets</span> <span class="k">for</span> <span class="n">fragment</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">get_fragments</span><span class="p">())</span>
+
+            <span class="n">ParquetConcat</span><span class="o">.</span><span class="n">_validate_filter_columns</span><span class="p">(</span><span class="n">filter_query</span><span class="p">,</span> <span class="n">datasets</span><span class="p">)</span>
+
+            <span class="c1"># Create scanners for all datasets</span>
+            <span class="n">scanners</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">dataset</span><span class="o">.</span><span class="n">scanner</span><span class="p">(</span>
+                    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">],</span>
+                    <span class="nb">filter</span><span class="o">=</span><span class="n">build_filter_expression</span><span class="p">(</span><span class="n">filter_query</span><span class="p">,</span> <span class="n">dataset</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span> <span class="k">if</span> <span class="n">filter_query</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">datasets</span>
+            <span class="p">]</span>
+
+            <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_file</span><span class="p">:</span>
+                <span class="n">writer</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">scanner</span> <span class="ow">in</span> <span class="n">scanners</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">scanner</span><span class="o">.</span><span class="n">to_batches</span><span class="p">():</span>
+                            <span class="n">table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_batches</span><span class="p">([</span><span class="n">batch</span><span class="p">])</span>
+
+                            <span class="c1"># Align the table to the unified schema</span>
+                            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">unified_schema</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                                    <span class="n">null_array</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">table</span><span class="p">),</span> <span class="nb">type</span><span class="o">=</span><span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+                                    <span class="n">table</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">append_column</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">null_array</span><span class="p">)</span>
+
+                            <span class="c1"># Reorder columns to match unified_schema before casting</span>
+                            <span class="n">table</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">unified_schema</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+                            <span class="n">table</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">unified_schema</span><span class="p">,</span> <span class="n">safe</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+                            <span class="c1"># Write the batch directly</span>
+                            <span class="k">if</span> <span class="n">writer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                                <span class="n">schema</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">schema</span>
+                                <span class="k">if</span> <span class="n">merged_pandas_meta</span><span class="p">:</span>
+                                    <span class="n">new_meta</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{})</span>
+                                    <span class="n">new_meta</span><span class="p">[</span><span class="sa">b</span><span class="s2">&quot;pandas&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">merged_pandas_meta</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+                                    <span class="n">schema</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">with_metadata</span><span class="p">(</span><span class="n">new_meta</span><span class="p">)</span>
+                                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Writing merged pandas metadata to output file.&quot;</span><span class="p">)</span>
+                                <span class="k">else</span><span class="p">:</span>
+                                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No pandas metadata found in input files.&quot;</span><span class="p">)</span>
+                                <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">HAS_TQDM</span> <span class="ow">and</span> <span class="n">progress_bar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                                    <span class="n">progress_bar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">total_row_groups</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing batches&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;batch&quot;</span><span class="p">)</span>
+                                <span class="n">writer</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetWriter</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+                            <span class="n">writer</span><span class="o">.</span><span class="n">write_table</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">progress_bar</span><span class="p">:</span>
+                                <span class="n">progress_bar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">writer</span><span class="p">:</span>
+                        <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">progress_bar</span><span class="p">:</span>
+                <span class="n">progress_bar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_filter</span><span class="p">(</span><span class="n">filter_query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">schema</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Schema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates the filter query against the table schema.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filter_query (Optional[str]): Filter expression.</span>
+<span class="sd">            schema (pa.Schema): Schema of the table to validate against.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the filter expression is invalid or references non-existent columns.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filter_query</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Parse the filter query to ensure it&#39;s valid</span>
+            <span class="n">parser</span> <span class="o">=</span> <span class="n">get_filter_parser</span><span class="p">()</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">filter_query</span><span class="p">)</span>
+
+            <span class="c1"># Use the get_referenced_columns function to extract referenced columns</span>
+            <span class="n">referenced_columns</span> <span class="o">=</span> <span class="n">get_referenced_columns</span><span class="p">(</span><span class="n">filter_query</span><span class="p">)</span>
+            <span class="n">missing_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">referenced_columns</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">missing_columns</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Filter references non-existent columns: </span><span class="si">{</span><span class="n">missing_columns</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Malformed filter expression: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">filter_query</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Malformed filter expression: </span><span class="si">{</span><span class="n">filter_query</span><span class="si">}</span><span class="se">\n</span><span class="s2">Error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Greg Elphick.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

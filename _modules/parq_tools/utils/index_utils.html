@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>parq_tools.utils.index_utils &mdash; parq-tools  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery.css?v=61a4c737" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=1a8b2067" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            parq-tools
+          </a>
+              <div class="version">
+                0.3.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../auto_examples/index.html">Example Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../glossary/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license/license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">parq-tools</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">parq_tools.utils.index_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for parq_tools.utils.index_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.parquet</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pq</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.compute</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.dataset</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ds</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">atomic_output_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.optional_imports</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_tqdm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.progress</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_batch_progress_bar</span>
+
+
+<div class="viewcode-block" id="validate_index_alignment">
+<a class="viewcode-back" href="../../../api/_autosummary/parq_tools.utils.index_utils.validate_index_alignment.html#parq_tools.utils.index_utils.validate_index_alignment">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_index_alignment</span><span class="p">(</span><span class="n">datasets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
+                             <span class="n">index_columns</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                             <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Validates that the index columns are identical across all datasets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        datasets (List[ds.Dataset]): List of PyArrow datasets to validate.</span>
+<span class="sd">        index_columns (List[str]): List of index column names to compare.</span>
+<span class="sd">        batch_size (int, optional): Number of rows per batch to process.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the index columns are not identical across datasets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Validating index alignment across datasets&quot;</span><span class="p">)</span>
+    <span class="n">scanners</span> <span class="o">=</span> <span class="p">[</span><span class="n">dataset</span><span class="o">.</span><span class="n">scanner</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">index_columns</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span> <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">]</span>
+    <span class="n">iterators</span> <span class="o">=</span> <span class="p">[</span><span class="n">scanner</span><span class="o">.</span><span class="n">to_batches</span><span class="p">()</span> <span class="k">for</span> <span class="n">scanner</span> <span class="ow">in</span> <span class="n">scanners</span><span class="p">]</span>
+
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">get_batch_progress_bar</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Validating index alignment&quot;</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">current_batches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_exhausted</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">for</span> <span class="n">iterator</span> <span class="ow">in</span> <span class="n">iterators</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">batch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+                <span class="n">current_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_batches</span><span class="p">([</span><span class="n">batch</span><span class="p">]))</span>
+                <span class="n">all_exhausted</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="n">current_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">all_exhausted</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="n">reference_batch</span> <span class="o">=</span> <span class="n">current_batches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">current_batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">current_batches</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">current_batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">current_batch</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">reference_batch</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Index columns are not aligned across datasets. Mismatch found in dataset </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Index alignment validated successfully&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="sort_parquet_file">
+<a class="viewcode-back" href="../../../api/_autosummary/parq_tools.utils.index_utils.sort_parquet_file.html#parq_tools.utils.index_utils.sort_parquet_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sort_parquet_file</span><span class="p">(</span>
+        <span class="n">input_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">output_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">columns</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Globally sort a Parquet file by the specified columns.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_path (Path): Path to the input Parquet file.</span>
+<span class="sd">        output_path (Path): Path to save the sorted Parquet file.</span>
+<span class="sd">        columns (List[str]): List of column names to sort by.</span>
+<span class="sd">        chunk_size (int, optional): Number of rows to process per chunk. Defaults to 100_000.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">dataset</span><span class="p">(</span><span class="n">input_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span>
+    <span class="n">sorted_batches</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">get_batch_progress_bar</span><span class="p">([</span><span class="n">dataset</span><span class="p">],</span> <span class="n">chunk_size</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Sorting parquet file&quot;</span><span class="p">)</span>
+    <span class="c1"># Read and sort each chunk</span>
+    <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">to_batches</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">):</span>
+        <span class="n">table</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_batches</span><span class="p">([</span><span class="n">batch</span><span class="p">])</span>
+        <span class="n">sort_indices</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Array</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">sort_indices</span><span class="p">(</span>
+            <span class="n">table</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="p">[(</span><span class="n">col</span><span class="p">,</span> <span class="s2">&quot;ascending&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">sorted_table</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">sort_indices</span><span class="p">)</span>
+        <span class="n">sorted_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sorted_table</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Merge all sorted chunks</span>
+    <span class="n">merged_table</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">concat_tables</span><span class="p">(</span><span class="n">sorted_batches</span><span class="p">)</span><span class="o">.</span><span class="n">combine_chunks</span><span class="p">()</span>
+    <span class="n">sort_indices</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Array</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">sort_indices</span><span class="p">(</span>
+        <span class="n">merged_table</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="p">[(</span><span class="n">col</span><span class="p">,</span> <span class="s2">&quot;ascending&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">sorted_table</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span> <span class="o">=</span> <span class="n">merged_table</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">sort_indices</span><span class="p">)</span>
+
+    <span class="c1"># Write the globally sorted table to a new Parquet file</span>
+    <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_file</span><span class="p">:</span>
+        <span class="n">pq</span><span class="o">.</span><span class="n">write_table</span><span class="p">(</span><span class="n">sorted_table</span><span class="p">,</span> <span class="n">tmp_file</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="reindex_parquet">
+<a class="viewcode-back" href="../../../api/_autosummary/parq_tools.utils.index_utils.reindex_parquet.html#parq_tools.utils.index_utils.reindex_parquet">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reindex_parquet</span><span class="p">(</span><span class="n">sparse_parquet_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+                    <span class="n">new_index</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">,</span>
+                    <span class="n">sort_after_reindex</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reindex a sparse Parquet file to align with a new index, processing in chunks.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sparse_parquet_path (Path): Path to the sparse Parquet file.</span>
+<span class="sd">        output_path (Path): Path to save the re-indexed Parquet file.</span>
+<span class="sd">        new_index (pa.Table): New index as a PyArrow table.</span>
+<span class="sd">        chunk_size (int): Number of rows to process per chunk.</span>
+<span class="sd">        sort_after_reindex (bool): Whether to sort the output after reindexing. Defaults to True.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Read the sparse Parquet file as a dataset</span>
+    <span class="n">sparse_dataset</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">dataset</span><span class="p">(</span><span class="n">sparse_parquet_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span>
+    <span class="n">index_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">field</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">new_index</span><span class="o">.</span><span class="n">schema</span> <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">sparse_dataset</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
+
+    <span class="c1"># Initialize the writer with the schema of the reindexed table</span>
+    <span class="n">first_batch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">sparse_dataset</span><span class="o">.</span><span class="n">to_batches</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">))</span>
+    <span class="n">sparse_table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_batches</span><span class="p">([</span><span class="n">first_batch</span><span class="p">])</span>
+    <span class="n">reindexed_table</span> <span class="o">=</span> <span class="n">new_index</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sparse_table</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="n">index_columns</span><span class="p">,</span> <span class="n">join_type</span><span class="o">=</span><span class="s2">&quot;left outer&quot;</span><span class="p">)</span>
+    <span class="n">writer_schema</span> <span class="o">=</span> <span class="n">reindexed_table</span><span class="o">.</span><span class="n">schema</span>
+
+    <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_file</span><span class="p">,</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetWriter</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">writer_schema</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">get_batch_progress_bar</span><span class="p">([</span><span class="n">sparse_dataset</span><span class="p">],</span> <span class="n">chunk_size</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Reindexing parquet file&quot;</span><span class="p">)</span>
+        <span class="c1"># Process the sparse dataset in chunks</span>
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">sparse_dataset</span><span class="o">.</span><span class="n">to_batches</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">):</span>
+            <span class="n">sparse_table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_batches</span><span class="p">([</span><span class="n">batch</span><span class="p">])</span>
+
+            <span class="c1"># Perform a left join with the new index</span>
+            <span class="n">reindexed_table</span> <span class="o">=</span> <span class="n">new_index</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sparse_table</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="n">index_columns</span><span class="p">,</span> <span class="n">join_type</span><span class="o">=</span><span class="s2">&quot;left outer&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Fill null values dynamically based on column types</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">reindexed_table</span><span class="o">.</span><span class="n">schema</span><span class="p">:</span>
+                <span class="n">column</span> <span class="o">=</span> <span class="n">reindexed_table</span><span class="p">[</span><span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">pa</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_floating</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="p">):</span>
+                    <span class="n">column</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">if_else</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">is_null</span><span class="p">(</span><span class="n">column</span><span class="p">),</span> <span class="n">pa</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">),</span> <span class="nb">type</span><span class="o">=</span><span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="n">column</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">pa</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_string</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="p">):</span>
+                    <span class="n">column</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">if_else</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">is_null</span><span class="p">(</span><span class="n">column</span><span class="p">),</span> <span class="n">pa</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="n">column</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">pa</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_dictionary</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="p">):</span>  <span class="c1"># Categorical</span>
+                    <span class="n">column</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">if_else</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">is_null</span><span class="p">(</span><span class="n">column</span><span class="p">),</span> <span class="n">pa</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="n">column</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">pa</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_integer</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="p">):</span>
+                    <span class="n">column</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">if_else</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">is_null</span><span class="p">(</span><span class="n">column</span><span class="p">),</span> <span class="n">pa</span><span class="o">.</span><span class="n">scalar</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">pa</span><span class="o">.</span><span class="n">int64</span><span class="p">()),</span> <span class="n">column</span><span class="p">)</span>
+                <span class="n">columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+            <span class="n">reindexed_table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">table</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">reindexed_table</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">write_table</span><span class="p">(</span><span class="n">reindexed_table</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Wrote </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows to </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">sort_after_reindex</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_file</span><span class="p">:</span>
+            <span class="n">sort_parquet_file</span><span class="p">(</span>
+                <span class="n">input_path</span><span class="o">=</span><span class="n">output_path</span><span class="p">,</span>
+                <span class="n">output_path</span><span class="o">=</span><span class="n">tmp_file</span><span class="p">,</span>
+                <span class="n">columns</span><span class="o">=</span><span class="n">index_columns</span><span class="p">,</span>
+                <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span>
+            <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="dedup_index_parquet">
+<a class="viewcode-back" href="../../../api/_autosummary/parq_tools.utils.index_utils.dedup_index_parquet.html#parq_tools.utils.index_utils.dedup_index_parquet">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dedup_index_parquet</span><span class="p">(</span>
+        <span class="n">input_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">output_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">index_columns</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100_000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove duplicate rows based on index columns from a Parquet file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_path (Path): Path to the input Parquet file.</span>
+<span class="sd">        output_path (Path): Path to save the deduplicated Parquet file.</span>
+<span class="sd">        index_columns (List[str]): Columns to use as the index for deduplication.</span>
+<span class="sd">        chunk_size (int): Number of rows to process per chunk.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">dataset</span><span class="p">(</span><span class="n">input_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;parquet&quot;</span><span class="p">)</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">first_batch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">to_batches</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">))</span>
+    <span class="n">schema</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_batches</span><span class="p">([</span><span class="n">first_batch</span><span class="p">])</span><span class="o">.</span><span class="n">schema</span>
+
+    <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_file</span><span class="p">,</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetWriter</span><span class="p">(</span><span class="n">tmp_file</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+        <span class="n">tqdm</span> <span class="o">=</span> <span class="n">get_tqdm</span><span class="p">()</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Deduplicating index&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">to_batches</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">):</span>
+            <span class="n">table</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_batches</span><span class="p">([</span><span class="n">batch</span><span class="p">])</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">num_rows</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">num_rows</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_rows</span><span class="p">):</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">table</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">as_py</span><span class="p">()</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">index_columns</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                    <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+                    <span class="n">mask</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mask</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+                <span class="n">filtered_table</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pa</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">write_table</span><span class="p">(</span><span class="n">filtered_table</span><span class="p">)</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Greg Elphick.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

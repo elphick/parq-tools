@@ -1,0 +1,6 @@
+parq\_tools.utils.metadata\_utils.merge\_pandas\_metadata
+=========================================================
+
+.. currentmodule:: parq_tools.utils.metadata_utils
+
+.. autofunction:: merge_pandas_metadata

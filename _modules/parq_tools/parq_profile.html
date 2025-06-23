@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>parq_tools.parq_profile &mdash; parq-tools  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=61a4c737" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=1a8b2067" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            parq-tools
+          </a>
+              <div class="version">
+                0.3.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../auto_examples/index.html">Example Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license/license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">parq-tools</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">parq_tools.parq_profile</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for parq_tools.parq_profile</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">parq_profile.py</span>
+
+<span class="sd">Utilities for profiling Parquet files and generating HTML reports using ydata-profiling, with support for notebook and browser display.</span>
+
+<span class="sd">Main API:</span>
+
+<span class="sd">- ParquetProfileReport: Class for generating, saving, and displaying profile reports for Parquet files.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.parquet</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pq</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">ydata_profiling</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProfileReport</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">atomic_output_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.metadata_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_table_metadata</span><span class="p">,</span> <span class="n">get_column_metadata</span><span class="p">,</span> <span class="n">get_pandas_metadata</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.profile_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">ColumnarProfileReport</span><span class="p">,</span> <span class="n">ProfileMetadata</span>
+
+
+<div class="viewcode-block" id="parquet_column_generator">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.parquet_column_generator.html#parq_tools.parq_profile.parquet_column_generator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parquet_column_generator</span><span class="p">(</span><span class="n">parquet_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
+                             <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Yields columns from a Parquet file as pandas Series.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parquet_path (str or Path): Path to the Parquet file.</span>
+<span class="sd">        columns (List[str], optional): List of column names to yield. If None, yields all columns.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        pd.Series: Each column as a pandas Series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pq_file</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">parquet_path</span><span class="p">))</span>
+    <span class="n">pandas_metadata</span> <span class="o">=</span> <span class="n">get_pandas_metadata</span><span class="p">(</span><span class="n">pq_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pandas_metadata</span><span class="p">:</span>
+        <span class="n">index_columns</span> <span class="o">=</span> <span class="n">pandas_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;index_columns&#39;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">index_columns</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">all_columns</span> <span class="o">=</span> <span class="n">columns</span> <span class="ow">or</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">all_columns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; not found in Parquet file.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">index_columns</span><span class="p">:</span>
+            <span class="n">series</span> <span class="o">=</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">col</span><span class="p">])</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()[</span><span class="n">col</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">series</span> <span class="o">=</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">col</span><span class="p">])</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()[</span><span class="n">col</span><span class="p">]</span>
+        <span class="k">yield</span> <span class="n">series</span></div>
+
+
+
+<div class="viewcode-block" id="ParquetProfileReport">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParquetProfileReport</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;For ydata-profiler reports on large parquet files.</span>
+
+<span class="sd">    Useful for profiling large Parquet files without loading them entirely into memory.</span>
+<span class="sd">    This class supports both native profiling (without chunking) and columnar profiling (with chunking).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ParquetProfileReport.__init__">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">parquet_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
+                 <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># Number of columns to process in each batch</span>
+                 <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Parquet Profile Report&quot;</span><span class="p">,</span>
+                 <span class="n">dataset_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">ProfileMetadata</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">column_descriptions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the ParquetProfileReport.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parquet_path: Path to the Parquet file to profile.</span>
+<span class="sd">            columns: List of column names to include in the profile. If None, all columns are used.</span>
+<span class="sd">            batch_size: Optional[int]: Number of columns to process in each batch. If None,</span>
+<span class="sd">             processes all columns at once.</span>
+<span class="sd">            show_progress: bool: If True, displays a progress bar during profiling.</span>
+<span class="sd">            title: Title of the report.</span>
+<span class="sd">            dataset_metadata: Optional[Union[dict, ProfileMetadata]]: Metadata for the dataset.  Will over-ride any</span>
+<span class="sd">                metadata in the Parquet file.</span>
+<span class="sd">            column_descriptions: Optional[dict[str, str]]: Column descriptions for the dataset.  Will over-ride any</span>
+<span class="sd">                descriptions in the Parquet file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parquet_path</span> <span class="o">=</span> <span class="n">parquet_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span> <span class="o">=</span> <span class="n">show_progress</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ProfileReport</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">dataset_metadata</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_metadata</span><span class="p">,</span> <span class="n">ProfileMetadata</span><span class="p">)</span> <span class="k">else</span> <span class="n">ProfileMetadata</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+            <span class="n">dataset_metadata</span><span class="p">)</span> <span class="k">if</span> <span class="n">dataset_metadata</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">column_descriptions</span> <span class="o">=</span> <span class="n">column_descriptions</span>
+
+        <span class="n">pq_file</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parquet_path</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span> <span class="k">if</span> <span class="n">columns</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">columns</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span><span class="p">:</span>
+            <span class="c1"># If no metadata is provided, use the Parquet file metadata</span>
+            <span class="n">table_meta</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">get_table_metadata</span><span class="p">(</span><span class="n">pq_file</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">ProfileMetadata</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">table_meta</span><span class="p">)</span> <span class="k">if</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">metadata</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">column_descriptions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># If no column descriptions are provided, use the Parquet file metadata</span>
+            <span class="n">column_descriptions</span> <span class="o">=</span> <span class="n">get_column_metadata</span><span class="p">(</span><span class="n">pq_file</span><span class="p">)</span>
+            <span class="n">column_descriptions</span> <span class="o">=</span> <span class="p">{</span><span class="n">col</span><span class="p">:</span> <span class="n">desc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">desc</span> <span class="ow">in</span> <span class="n">column_descriptions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">column_descriptions</span> <span class="o">=</span> <span class="n">column_descriptions</span></div>
+
+
+<div class="viewcode-block" id="ParquetProfileReport.profile">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.profile">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ParquetProfileReport&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Profiles the Parquet file</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Native ydata profiling (no chunking)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parquet_path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="o">=</span> <span class="n">ProfileReport</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">minimal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">explorative</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">dataset</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                                        <span class="n">variables</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">column_descriptions</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Columnar profiling</span>
+            <span class="n">gen</span> <span class="o">=</span> <span class="n">parquet_column_generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parquet_path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="n">report</span> <span class="o">=</span> <span class="n">ColumnarProfileReport</span><span class="p">(</span>
+                <span class="n">column_generator</span><span class="o">=</span><span class="n">gen</span><span class="p">,</span>
+                <span class="n">column_count</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span>
+                <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="n">dataset_metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span><span class="p">,</span>
+                <span class="n">column_descriptions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">column_descriptions</span><span class="p">)</span>
+            <span class="n">report</span><span class="o">.</span><span class="n">profile</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">report</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="ParquetProfileReport.to_html">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.to_html">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_html</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The HTML representation of the profile report.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No report generated. Call profile() first.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ParquetProfileReport.save_html">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.save_html">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_html</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_html</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Save the profile report to a HTML file.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_html</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_path</span><span class="p">:</span>
+            <span class="n">tmp_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_html</span><span class="p">(),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ParquetProfileReport.show">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.show">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">notebook</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Display the profile report in a notebook or open in a browser.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            notebook (bool): If True, display in Jupyter notebook. If False, open in browser.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">notebook</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">to_notebook_iframe</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span><span class="o">,</span><span class="w"> </span><span class="nn">webbrowser</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.html&quot;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">tmp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+            <span class="n">tmp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">webbrowser</span><span class="o">.</span><span class="n">open_new_tab</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;file://</span><span class="si">{</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Greg Elphick.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

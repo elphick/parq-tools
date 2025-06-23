@@ -1,0 +1,58 @@
+
+:orphan:
+
+.. _sphx_glr_auto_examples_sg_execution_times:
+
+
+Computation times
+=================
+**00:08.017** total execution time for 8 files **from auto_examples**:
+
+.. container::
+
+  .. raw:: html
+
+    <style scoped>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    </style>
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" class="init">
+    $(document).ready( function () {
+        $('table.sg-datatable').DataTable({order: [[1, 'desc']]});
+    } );
+    </script>
+
+  .. list-table::
+   :header-rows: 1
+   :class: table table-striped sg-datatable
+
+   * - Example
+     - Time
+     - Mem (MB)
+   * - :ref:`sphx_glr_auto_examples_08_memory_usage.py` (``08_memory_usage.py``)
+     - 00:05.267
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_06_profiling.py` (``06_profiling.py``)
+     - 00:02.447
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_03_tall_concatenation.py` (``03_tall_concatenation.py``)
+     - 00:00.094
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_02_wide_concatenation.py` (``02_wide_concatenation.py``)
+     - 00:00.070
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_01_filtering.py` (``01_filtering.py``)
+     - 00:00.060
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_05_index_utilities.py` (``05_index_utilities.py``)
+     - 00:00.057
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_04_renaming.py` (``04_renaming.py``)
+     - 00:00.018
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_07_archive_extraction.py` (``07_archive_extraction.py``)
+     - 00:00.003
+     - 0.0

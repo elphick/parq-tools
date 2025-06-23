@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Index Utilities &mdash; parq-tools  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=61a4c737" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=1a8b2067" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Parquet Profiling" href="06_profiling.html" />
+    <link rel="prev" title="Renaming and Metadata" href="04_renaming.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            parq-tools
+          </a>
+              <div class="version">
+                0.3.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../usage/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Example Gallery</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="01_filtering.html">Filtering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="02_wide_concatenation.html">Wide Concatenation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="03_tall_concatenation.html">Tall Concatenation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="04_renaming.html">Renaming and Metadata</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Index Utilities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#create-a-dataset">Create a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sort-by-the-index">Sort by the index</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reindexing">Reindexing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#validate-index-alignment">Validate index alignment</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="06_profiling.html">Parquet Profiling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="07_archive_extraction.html">Archive Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="08_memory_usage.html">Memory Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/modules.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license/license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">parq-tools</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Example Gallery</a></li>
+      <li class="breadcrumb-item active">Index Utilities</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/auto_examples/05_index_utilities.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-05-index-utilities-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code.</p>
+</div>
+<section class="sphx-glr-example-title" id="index-utilities">
+<span id="sphx-glr-auto-examples-05-index-utilities-py"></span><h1>Index Utilities<a class="headerlink" href="#index-utilities" title="Link to this heading"></a></h1>
+<p>A simple example to demonstrate utilities related to <cite>index</cite> columns.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Index columns as we know them in Pandas do not exist in a native Parquet file.  However, if the Parquet file
+has been created using Pandas then metadata is preserved to restore the indexes when a round-trip back to Pandas
+is completed.</p>
+</div>
+<p>The utilities demonstrated here are tools mimic index operations that one may use in Pandas.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.dataset</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ds</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">sort_parquet_file</span><span class="p">,</span> <span class="n">reindex_parquet</span><span class="p">,</span> <span class="n">validate_index_alignment</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.demo_block_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_demo_blockmodel</span>
+</pre></div>
+</div>
+<section id="create-a-dataset">
+<h2>Create a dataset<a class="headerlink" href="#create-a-dataset" title="Link to this heading"></a></h2>
+<p>Create a temporary parquet file for demonstration.  This example represents a 3D block model.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">parquet_file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">())</span> <span class="o">/</span> <span class="s2">&quot;example_data.parquet&quot;</span>
+
+<span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">create_demo_blockmodel</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">block_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                          <span class="n">corner</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">))</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">)</span>
+<span class="n">df</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>c_order_xyz</th>
+      <th>f_order_zyx</th>
+      <th>depth</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="9" valign="top">0.0</th>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <td>0</td>
+      <td>0</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>1</td>
+      <td>9</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>2</td>
+      <td>18</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>0.0</th>
+      <td>3</td>
+      <td>3</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>4</td>
+      <td>12</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>5</td>
+      <td>21</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">2.0</th>
+      <th>0.0</th>
+      <td>6</td>
+      <td>6</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>7</td>
+      <td>15</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>8</td>
+      <td>24</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="9" valign="top">1.0</th>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <td>9</td>
+      <td>1</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>10</td>
+      <td>10</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>11</td>
+      <td>19</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>0.0</th>
+      <td>12</td>
+      <td>4</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>13</td>
+      <td>13</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>14</td>
+      <td>22</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">2.0</th>
+      <th>0.0</th>
+      <td>15</td>
+      <td>7</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>16</td>
+      <td>16</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>17</td>
+      <td>25</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="9" valign="top">2.0</th>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <td>18</td>
+      <td>2</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>19</td>
+      <td>11</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>20</td>
+      <td>20</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>0.0</th>
+      <td>21</td>
+      <td>5</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>22</td>
+      <td>14</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>23</td>
+      <td>23</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">2.0</th>
+      <th>0.0</th>
+      <td>24</td>
+      <td>8</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>25</td>
+      <td>17</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>26</td>
+      <td>26</td>
+      <td>0.5</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /><p>Randomise the order of the DataFrame and persist to Parquet</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">)</span>
+<span class="n">df_randomised</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">)</span>
+<span class="n">df_randomised</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>c_order_xyz</th>
+      <th>f_order_zyx</th>
+      <th>depth</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2.0</th>
+      <th>0.0</th>
+      <th>1.0</th>
+      <td>19</td>
+      <td>11</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>0.0</th>
+      <th>1.0</th>
+      <th>1.0</th>
+      <td>4</td>
+      <td>12</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th rowspan="2" valign="top">2.0</th>
+      <th rowspan="2" valign="top">1.0</th>
+      <th>1.0</th>
+      <td>22</td>
+      <td>14</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>23</td>
+      <td>23</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>2.0</th>
+      <th>2.0</th>
+      <td>17</td>
+      <td>25</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>0.0</th>
+      <th>2.0</th>
+      <td>11</td>
+      <td>19</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <th>1.0</th>
+      <td>13</td>
+      <td>13</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>0.0</th>
+      <th>0.0</th>
+      <th>1.0</th>
+      <td>1</td>
+      <td>9</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <th>2.0</th>
+      <th>0.0</th>
+      <td>24</td>
+      <td>8</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th rowspan="2" valign="top">1.0</th>
+      <th>0.0</th>
+      <th>1.0</th>
+      <td>10</td>
+      <td>10</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <th>0.0</th>
+      <td>12</td>
+      <td>4</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <th>2.0</th>
+      <td>2</td>
+      <td>18</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="2" valign="top">2.0</th>
+      <th>2.0</th>
+      <td>8</td>
+      <td>24</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>7</td>
+      <td>15</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <th>2.0</th>
+      <th>1.0</th>
+      <td>25</td>
+      <td>17</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th rowspan="2" valign="top">0.0</th>
+      <th>2.0</th>
+      <th>0.0</th>
+      <td>6</td>
+      <td>6</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <th>0.0</th>
+      <td>3</td>
+      <td>3</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th rowspan="2" valign="top">2.0</th>
+      <th>1.0</th>
+      <th>0.0</th>
+      <td>21</td>
+      <td>5</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <th>2.0</th>
+      <td>26</td>
+      <td>26</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="2" valign="top">0.0</th>
+      <th>1.0</th>
+      <th>2.0</th>
+      <td>5</td>
+      <td>21</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>0.0</th>
+      <th>0.0</th>
+      <td>0</td>
+      <td>0</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th rowspan="2" valign="top">1.0</th>
+      <th>1.0</th>
+      <th>2.0</th>
+      <td>14</td>
+      <td>22</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>0.0</th>
+      <th>0.0</th>
+      <td>9</td>
+      <td>1</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <th>0.0</th>
+      <th>0.0</th>
+      <td>18</td>
+      <td>2</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <th>2.0</th>
+      <th>0.0</th>
+      <td>15</td>
+      <td>7</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <th>0.0</th>
+      <th>2.0</th>
+      <td>20</td>
+      <td>20</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <th>2.0</th>
+      <th>1.0</th>
+      <td>16</td>
+      <td>16</td>
+      <td>1.5</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="sort-by-the-index">
+<h2>Sort by the index<a class="headerlink" href="#sort-by-the-index" title="Link to this heading"></a></h2>
+<p>We can sort the DataFrame by the index columns to mimic the behavior of Pandas.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">index_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">]</span>
+<span class="n">sorted_file_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">parquet_file_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;sorted_example_data.parquet&quot;</span>
+<span class="n">sort_parquet_file</span><span class="p">(</span><span class="n">parquet_file_path</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">sorted_file_path</span><span class="p">,</span>
+                  <span class="n">columns</span><span class="o">=</span><span class="n">index_cols</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">100_000</span><span class="p">)</span>
+
+<span class="c1"># Read the sorted Parquet file</span>
+<span class="n">sorted_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">sorted_file_path</span><span class="p">)</span>
+<span class="n">sorted_df</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Sorting parquet file:   0%|          | 0/1 [00:00&lt;?, ?it/s]
+Sorting parquet file: 100%|██████████| 1/1 [00:00&lt;00:00, 1448.31it/s]
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>c_order_xyz</th>
+      <th>f_order_zyx</th>
+      <th>depth</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="9" valign="top">0.0</th>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <td>0</td>
+      <td>0</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>1</td>
+      <td>9</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>2</td>
+      <td>18</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>0.0</th>
+      <td>3</td>
+      <td>3</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>4</td>
+      <td>12</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>5</td>
+      <td>21</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">2.0</th>
+      <th>0.0</th>
+      <td>6</td>
+      <td>6</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>7</td>
+      <td>15</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>8</td>
+      <td>24</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="9" valign="top">1.0</th>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <td>9</td>
+      <td>1</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>10</td>
+      <td>10</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>11</td>
+      <td>19</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>0.0</th>
+      <td>12</td>
+      <td>4</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>13</td>
+      <td>13</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>14</td>
+      <td>22</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">2.0</th>
+      <th>0.0</th>
+      <td>15</td>
+      <td>7</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>16</td>
+      <td>16</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>17</td>
+      <td>25</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="9" valign="top">2.0</th>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <td>18</td>
+      <td>2</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>19</td>
+      <td>11</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>20</td>
+      <td>20</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>0.0</th>
+      <td>21</td>
+      <td>5</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>22</td>
+      <td>14</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>23</td>
+      <td>23</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">2.0</th>
+      <th>0.0</th>
+      <td>24</td>
+      <td>8</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>25</td>
+      <td>17</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>26</td>
+      <td>26</td>
+      <td>0.5</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="reindexing">
+<h2>Reindexing<a class="headerlink" href="#reindexing" title="Link to this heading"></a></h2>
+<p>We can reindex the DataFrame to change the order of the index columns.  This is useful if we want to change the
+order of the index columns to align with another dataset prior to concatenation.  Reindexing will reorder existing
+records, and will add empty records if the new index has more records than the original index.</p>
+<p>To demonstrate this, we will create another Parquet file with a subset of the original records that are unordered.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">unsorted_subset_file_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">parquet_file_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;unsorted_subset.parquet&quot;</span>
+<span class="n">df_randomised</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">unsorted_subset_file_path</span><span class="p">)</span>
+<span class="n">df_unsorted_subset</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">unsorted_subset_file_path</span><span class="p">)</span>
+<span class="n">df_unsorted_subset</span>
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>c_order_xyz</th>
+      <th>f_order_zyx</th>
+      <th>depth</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="2" valign="top">0.0</th>
+      <th>2.0</th>
+      <th>1.0</th>
+      <td>7</td>
+      <td>15</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>0.0</th>
+      <th>0.0</th>
+      <td>0</td>
+      <td>0</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <th>0.0</th>
+      <th>2.0</th>
+      <td>11</td>
+      <td>19</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>0.0</th>
+      <th>2.0</th>
+      <th>0.0</th>
+      <td>6</td>
+      <td>6</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <th>1.0</th>
+      <th>1.0</th>
+      <td>22</td>
+      <td>14</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th rowspan="2" valign="top">0.0</th>
+      <th rowspan="2" valign="top">1.0</th>
+      <th>1.0</th>
+      <td>4</td>
+      <td>12</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>5</td>
+      <td>21</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <th>0.0</th>
+      <th>0.0</th>
+      <td>9</td>
+      <td>1</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <th>0.0</th>
+      <th>2.0</th>
+      <td>20</td>
+      <td>20</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>0.0</th>
+      <th>0.0</th>
+      <th>2.0</th>
+      <td>2</td>
+      <td>18</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="2" valign="top">2.0</th>
+      <th>1.0</th>
+      <th>2.0</th>
+      <td>23</td>
+      <td>23</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <th>0.0</th>
+      <td>24</td>
+      <td>8</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <th>1.0</th>
+      <th>2.0</th>
+      <td>14</td>
+      <td>22</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <th>0.0</th>
+      <th>1.0</th>
+      <td>19</td>
+      <td>11</td>
+      <td>1.5</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /><p>Reindex the unsorted subset to match the original index order</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">reindexed_file_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">parquet_file_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;reindexed_subset.parquet&quot;</span>
+<span class="n">reindex_parquet</span><span class="p">(</span><span class="n">unsorted_subset_file_path</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">reindexed_file_path</span><span class="p">,</span>
+                <span class="n">new_index</span><span class="o">=</span><span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_pandas</span><span class="p">(</span><span class="n">sorted_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()[</span><span class="n">index_cols</span><span class="p">]))</span>
+<span class="n">df_reindexed</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">reindexed_file_path</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index_cols</span><span class="p">)</span>
+<span class="n">df_reindexed</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Reindexing parquet file:   0%|          | 0/1 [00:00&lt;?, ?it/s]
+Reindexing parquet file: 100%|██████████| 1/1 [00:00&lt;00:00, 723.53it/s]
+
+Sorting parquet file:   0%|          | 0/1 [00:00&lt;?, ?it/s]
+Sorting parquet file: 100%|██████████| 1/1 [00:00&lt;00:00, 1818.87it/s]
+</pre></div>
+</div>
+<div class="output_subarea output_html rendered_html output_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th></th>
+      <th>c_order_xyz</th>
+      <th>f_order_zyx</th>
+      <th>depth</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th>y</th>
+      <th>z</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th rowspan="9" valign="top">0.0</th>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>2.0</td>
+      <td>18.0</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>0.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>4.0</td>
+      <td>12.0</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>5.0</td>
+      <td>21.0</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">2.0</th>
+      <th>0.0</th>
+      <td>6.0</td>
+      <td>6.0</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>7.0</td>
+      <td>15.0</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th rowspan="9" valign="top">1.0</th>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <td>9.0</td>
+      <td>1.0</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>11.0</td>
+      <td>19.0</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>0.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>14.0</td>
+      <td>22.0</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">2.0</th>
+      <th>0.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th rowspan="9" valign="top">2.0</th>
+      <th rowspan="3" valign="top">0.0</th>
+      <th>0.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>19.0</td>
+      <td>11.0</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>20.0</td>
+      <td>20.0</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">1.0</th>
+      <th>0.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>22.0</td>
+      <td>14.0</td>
+      <td>1.5</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>23.0</td>
+      <td>23.0</td>
+      <td>0.5</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">2.0</th>
+      <th>0.0</th>
+      <td>24.0</td>
+      <td>8.0</td>
+      <td>2.5</td>
+    </tr>
+    <tr>
+      <th>1.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>2.0</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+<br />
+<br /></section>
+<section id="validate-index-alignment">
+<h2>Validate index alignment<a class="headerlink" href="#validate-index-alignment" title="Link to this heading"></a></h2>
+<p>We can demonstrate the <cite>validate_index_alignment</cite> function.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">dataset</span><span class="p">(</span><span class="n">pf</span><span class="p">)</span> <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="p">[</span><span class="n">sorted_file_path</span><span class="p">,</span> <span class="n">reindexed_file_path</span><span class="p">]]</span>
+<span class="n">validate_index_alignment</span><span class="p">(</span><span class="n">datasets</span><span class="o">=</span><span class="n">datasets</span><span class="p">,</span> <span class="n">index_columns</span><span class="o">=</span><span class="n">index_cols</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Validating index alignment:   0%|          | 0/1 [00:00&lt;?, ?it/s]
+Validating index alignment: 100%|██████████| 1/1 [00:00&lt;00:00, 7557.30it/s]
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.057 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-05-index-utilities-py">
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/57851c3448143074d1c39edb53c30773/05_index_utilities.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">05_index_utilities.ipynb</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/5f669bf09eeb4e0d9f25bd3cb3aee653/05_index_utilities.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">05_index_utilities.py</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="04_renaming.html" class="btn btn-neutral float-left" title="Renaming and Metadata" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="06_profiling.html" class="btn btn-neutral float-right" title="Parquet Profiling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Greg Elphick.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
