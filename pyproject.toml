@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "parq-tools"
-version = "0.3.0"
+version = "0.3.1"
 description = "A collection of utilities for efficiently working with **large-scale** Parquet datasets."
 authors = ["Greg <11791585+elphick@users.noreply.github.com>"]
 readme = "README.md"
@@ -13,10 +13,14 @@ lark = "^1.2.2"
 tqdm = { version = "^4.67.1", optional = true }
 ydata-profiling = { version = "^4.16.1", optional = true }
 setuptools = { version = "*", optional = true }
+pyvista = { version = "^0.45.2", optional = true }
+#asv = "^0.6.4"
+#polars = "^1.31.0"
 
 [tool.poetry.extras]
 profiling = ["ydata-profiling", "setuptools"]
-tqdm = ["tqdm"]
+progress = ["tqdm"]
+blockmodel = ["pyvista"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.1"

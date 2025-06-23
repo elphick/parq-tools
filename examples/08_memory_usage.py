@@ -13,7 +13,7 @@ import pandas as pd
 from pathlib import Path
 
 from parq_tools import ParquetProfileReport
-from parq_tools.utils import create_test_blockmodel
+from parq_tools.utils.demo_block_model import create_demo_blockmodel
 from parq_tools.utils.memory_utils import parquet_memory_usage, print_parquet_memory_usage
 
 # %%
@@ -26,7 +26,7 @@ temp_dir.mkdir(parents=True, exist_ok=True)
 parquet_file_path: Path = temp_dir / "test_blockmodel.parquet"
 
 # Create a reasonably large model example
-df: pd.DataFrame = create_test_blockmodel(shape=(300, 100, 100), block_size=(10, 10, 5),
+df: pd.DataFrame = create_demo_blockmodel(shape=(300, 100, 100), block_size=(10, 10, 5),
                                           corner=(0, 0, 0))
 # Add a categorical column and a string column
 df["depth_as_string"] = df["depth"].astype(str)

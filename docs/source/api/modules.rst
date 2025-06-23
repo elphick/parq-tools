@@ -10,8 +10,11 @@ API Reference
 
     parq_filter
     parq_concat
-    parq_rename
+    parq_schema_tools
     parq_profile
+    parq_compare
+    lazy_parquet
+    calculated_columns
     utils
 
 

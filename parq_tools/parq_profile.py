@@ -7,7 +7,7 @@ Main API:
 
 - ParquetProfileReport: Class for generating, saving, and displaying profile reports for Parquet files.
 """
-
+import json
 from pathlib import Path
 from typing import Iterator, Optional, List, Union
 import pandas as pd
@@ -16,7 +16,8 @@ import pyarrow.parquet as pq
 from ydata_profiling import ProfileReport
 
 from parq_tools.utils import atomic_output_file
-from parq_tools.utils.profile_utils import ColumnarProfileReport
+from parq_tools.utils.metadata_utils import get_table_metadata, get_column_metadata, get_pandas_metadata
+from parq_tools.utils.profile_utils import ColumnarProfileReport, ProfileMetadata
 
 
 def parquet_column_generator(parquet_path: Union[str, Path],
@@ -32,9 +33,20 @@ def parquet_column_generator(parquet_path: Union[str, Path],
         pd.Series: Each column as a pandas Series.
     """
     pq_file = pq.ParquetFile(str(parquet_path))
+    pandas_metadata = get_pandas_metadata(pq_file)
+    if pandas_metadata:
+        index_columns = pandas_metadata.get('index_columns', [])
+    else:
+        index_columns = []
+
     all_columns = columns or pq_file.schema.names
     for col in all_columns:
-        series = pq_file.read(columns=[col]).to_pandas()[col]
+        if col not in pq_file.schema.names:
+            raise ValueError(f"Column '{col}' not found in Parquet file.")
+        if col in index_columns:
+            series = pq_file.read(columns=[col]).to_pandas().reset_index()[col]
+        else:
+            series = pq_file.read(columns=[col]).to_pandas()[col]
         yield series
 
 
@@ -49,7 +61,10 @@ class ParquetProfileReport:
                  parquet_path: Union[str, Path],
                  columns: Optional[List[str]] = None,
                  batch_size: Optional[int] = 1,  # Number of columns to process in each batch
-                 show_progress: bool = True) -> None:
+                 show_progress: bool = True,
+                 title: str = "Parquet Profile Report",
+                 dataset_metadata: Optional[Union[dict, ProfileMetadata]] = None,
+                 column_descriptions: Optional[dict[str, str]] = None) -> None:
         """
         Initialize the ParquetProfileReport.
 
@@ -59,17 +74,34 @@ class ParquetProfileReport:
             batch_size: Optional[int]: Number of columns to process in each batch. If None,
              processes all columns at once.
             show_progress: bool: If True, displays a progress bar during profiling.
+            title: Title of the report.
+            dataset_metadata: Optional[Union[dict, ProfileMetadata]]: Metadata for the dataset.  Will over-ride any
+                metadata in the Parquet file.
+            column_descriptions: Optional[dict[str, str]]: Column descriptions for the dataset.  Will over-ride any
+                descriptions in the Parquet file.
         """
         self.parquet_path = parquet_path
         self.batch_size = batch_size
         self.show_progress = show_progress
+        self.title = title
         self.report: Optional[ProfileReport] = None
 
-        if columns is None:
-            pq_file = pq.ParquetFile(str(self.parquet_path))
-            self.columns = pq_file.schema.names
-        else:
-            self.columns = columns
+        metadata = dataset_metadata if isinstance(dataset_metadata, ProfileMetadata) else ProfileMetadata.from_dict(
+            dataset_metadata) if dataset_metadata else None
+        self.dataset_metadata = metadata
+        self.column_descriptions = column_descriptions
+
+        pq_file = pq.ParquetFile(str(self.parquet_path))
+        self.columns = pq_file.schema.names if columns is None else columns
+        if not self.dataset_metadata:
+            # If no metadata is provided, use the Parquet file metadata
+            table_meta: dict = get_table_metadata(pq_file)
+            self.dataset_metadata = ProfileMetadata.from_dict(table_meta) if pq_file.metadata else None
+        if self.column_descriptions is None:
+            # If no column descriptions are provided, use the Parquet file metadata
+            column_descriptions = get_column_metadata(pq_file)
+            column_descriptions = {col: desc.get("description", "") for col, desc in column_descriptions.items() if col in self.columns}
+            self.column_descriptions = column_descriptions
 
     def profile(self) -> 'ParquetProfileReport':
         """
@@ -79,7 +111,9 @@ class ParquetProfileReport:
         if self.batch_size is None:
             # Native ydata profiling (no chunking)
             df = pd.read_parquet(self.parquet_path, columns=self.columns)
-            self.report = ProfileReport(df, minimal=True, explorative=False, progress_bar=False)
+            self.report = ProfileReport(df, minimal=True, explorative=False, progress_bar=False,
+                                        title=self.title, dataset=self.dataset_metadata.to_dict(),
+                                        variables=self.column_descriptions)
         else:
             # Columnar profiling
             gen = parquet_column_generator(self.parquet_path, columns=self.columns)
@@ -88,7 +122,9 @@ class ParquetProfileReport:
                 column_count=len(self.columns),
                 batch_size=self.batch_size,
                 show_progress=self.show_progress,
-            )
+                title=self.title,
+                dataset_metadata=self.dataset_metadata,
+                column_descriptions=self.column_descriptions)
             report.profile()
             self.report = report.report
         return self

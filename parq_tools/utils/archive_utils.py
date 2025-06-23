@@ -6,14 +6,7 @@ import subprocess
 import time
 
 from parq_tools.utils import atomic_output_dir
-
-try:
-    # noinspection PyUnresolvedReferences
-    from tqdm import tqdm
-
-    HAS_TQDM = True
-except ImportError:
-    HAS_TQDM = False
+from parq_tools.utils.optional_imports import get_tqdm
 
 
 def extract_archive(archive_path: Path,
@@ -30,13 +23,15 @@ def extract_archive(archive_path: Path,
     """
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    tqdm = get_tqdm()
+
     # Attempt extraction with zipfile
     try:
         with zipfile.ZipFile(archive_path, 'r') as zip_ref:
             file_info = zip_ref.infolist()
             total_size = sum(file.file_size for file in file_info)  # Total size of all files
 
-            if HAS_TQDM and show_progress:
+            if show_progress:
                 with tqdm(total=total_size, desc="Extracting", unit="B", unit_scale=True, unit_divisor=1024,
                           dynamic_ncols=True) as pbar:
                     with atomic_output_dir(output_dir) as tmp_dir:
@@ -71,6 +66,8 @@ def extract_archive_with_7zip(archive_path: Path,
         show_progress (bool): Whether to display a progress bar. Defaults to False.
 
     """
+
+    tqdm = get_tqdm()
 
     seven_zip_path = shutil.which("7z")
     if not seven_zip_path:

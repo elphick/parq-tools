@@ -5,6 +5,13 @@ permissions:
 
 on:
   push:
+    branches:
+      - main
+      - 'release/*'
+  pull_request:
+    branches:
+      - main
+      - 'release/*'
   workflow_dispatch:
 
 jobs:
@@ -77,6 +84,7 @@ jobs:
           name: coverage-badge
           path: docs/source/_static/badges/coverage.svg
       - name: Commit and push coverage badge
+        if: github.event_name == 'push'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"

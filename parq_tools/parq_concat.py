@@ -21,7 +21,7 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 from typing import List, Optional
 
-from parq_tools.utils import atomic_output_file, extract_pandas_metadata, merge_pandas_metadata
+from parq_tools.utils import atomic_output_file, get_pandas_metadata, merge_pandas_metadata
 from parq_tools.utils.index_utils import validate_index_alignment
 # noinspection PyProtectedMember
 from parq_tools.utils._query_parser import build_filter_expression, get_filter_parser, get_referenced_columns
@@ -202,7 +202,7 @@ class ParquetConcat:
         # Collect and merge pandas metadata from all input files
         pandas_metadatas = []
         for file in self.files:
-            meta = extract_pandas_metadata(file)
+            meta = get_pandas_metadata(file)
             if meta:
                 pandas_metadatas.append(meta)
         merged_pandas_meta = merge_pandas_metadata(pandas_metadatas) if pandas_metadatas else None
@@ -219,35 +219,24 @@ class ParquetConcat:
                 for dataset in datasets
             ]
 
-            if show_progress and HAS_TQDM:
-                total_batches = max(
-                    sum(fragment.metadata.num_row_groups for fragment in dataset.get_fragments())
-                    for dataset in datasets)
-                progress_bar = tqdm(total=total_batches, desc="Processing batches", unit="batch")
-
             with atomic_output_file(output_path) as tmp_file:
                 writer = None
                 try:
                     while True:
                         aligned_batches = []
                         all_exhausted = True
-
                         for scanner in scanners:
                             try:
                                 batch = next(scanner)
                                 table = pa.Table.from_batches([batch])
                                 if table.column_names == self.index_columns:
-                                    # If the table only contains index columns, skip it
                                     continue
                                 aligned_batches.append(table)
                                 all_exhausted = False
                             except StopIteration:
                                 aligned_batches.append(None)
-
                         if all_exhausted:
                             break
-
-                        # Merge tables horizontally by combining their columns
                         combined_arrays = []
                         combined_fields = []
                         for i, table in enumerate(aligned_batches):
@@ -257,20 +246,15 @@ class ParquetConcat:
                                 combined_arrays.extend(table.columns)
                                 combined_fields.extend(table.schema)
                             else:
-                                # Exclude index columns from all but the first table
                                 for col, field in zip(table.columns, table.schema):
                                     if field.name not in self.index_columns:
                                         combined_arrays.append(col)
                                         combined_fields.append(field)
                         combined_table = pa.Table.from_arrays(combined_arrays, schema=pa.schema(combined_fields))
-
-                        # Apply row-level filtering to the combined table
                         if filter_query:
                             filter_expression = build_filter_expression(filter_query, combined_table.schema)
                             combined_table = combined_table.filter(filter_expression)
-
                         if writer is None:
-                            # Attach merged pandas metadata to schema if present
                             schema = combined_table.schema
                             if merged_pandas_meta:
                                 new_meta = dict(schema.metadata or {})
@@ -279,15 +263,18 @@ class ParquetConcat:
                                 logging.info("Writing merged pandas metadata to output file.")
                             else:
                                 logging.info("No pandas metadata found in input files.")
+                            if show_progress and HAS_TQDM and progress_bar is None:
+                                total_batches = max(
+                                    sum(fragment.metadata.num_row_groups for fragment in dataset.get_fragments())
+                                    for dataset in datasets)
+                                progress_bar = tqdm(total=total_batches, desc="Processing batches", unit="batch")
                             writer = pq.ParquetWriter(tmp_file, schema)
                         writer.write_table(combined_table)
-
                         if progress_bar:
                             progress_bar.update(1)
                 finally:
                     if writer:
                         writer.close()
-
         finally:
             if progress_bar:
                 progress_bar.close()
@@ -304,7 +291,7 @@ class ParquetConcat:
         # Collect and merge pandas metadata from all input files
         pandas_metadatas = []
         for file in self.files:
-            meta = extract_pandas_metadata(file)
+            meta = get_pandas_metadata(file)
             if meta:
                 pandas_metadatas.append(meta)
         merged_pandas_meta = merge_pandas_metadata(pandas_metadatas) if pandas_metadatas else None
@@ -314,9 +301,6 @@ class ParquetConcat:
             columns = self._validate_columns(unified_schema, columns)
             total_row_groups = sum(
                 fragment.metadata.num_row_groups for dataset in datasets for fragment in dataset.get_fragments())
-
-            if show_progress and HAS_TQDM:
-                progress_bar = tqdm(total=total_row_groups, desc="Processing batches", unit="batch")
 
             ParquetConcat._validate_filter_columns(filter_query, datasets)
 
@@ -357,6 +341,8 @@ class ParquetConcat:
                                     logging.info("Writing merged pandas metadata to output file.")
                                 else:
                                     logging.info("No pandas metadata found in input files.")
+                                if show_progress and HAS_TQDM and progress_bar is None:
+                                    progress_bar = tqdm(total=total_row_groups, desc="Processing batches", unit="batch")
                                 writer = pq.ParquetWriter(tmp_file, schema)
                             writer.write_table(table)
                             if progress_bar:

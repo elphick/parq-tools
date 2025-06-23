@@ -22,4 +22,4 @@ If your datasets are not large, you might find the `pandas` library more conveni
 - [x] **Concatenation** → Combines multiple Parquet files efficiently along rows (`axis=0`) or columns (`axis=1`).
 - [x] **Tokenized Filtering** → Converts **pandas-style expressions** into efficient PyArrow queries.
 - [x] **Profiling Enhancements** → Improves `ydata-profiling` by profiling **specific columns incrementally**, merging results for large files.
-- [ ] **Block Model Generation** → Create a parquet block model that exceeds the machine memory capacity, useful for testing pipelines.
+- [ ] **DataFrame Enhancements** → Provides a `LazyParquetDataFrame` class that extends `pandas.DataFrame` with lazy loading from Parquet files.

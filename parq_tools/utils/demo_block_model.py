@@ -1,22 +1,24 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 
-def create_test_blockmodel(shape: tuple[int, int, int],
-                           block_size: tuple[float, float, float],
-                           corner: tuple[float, float, float],
-                           is_tensor=False) -> pd.DataFrame:
+def create_demo_blockmodel(shape: tuple[int, int, int] = (3, 3, 3),
+                           block_size: tuple[float, float, float] = (1.0, 1.0, 1.0),
+                           corner: tuple[float, float, float] = (0.0, 0.0, 0.0),
+                           parquet_filepath: Path = None
+                           ) -> pd.DataFrame | Path:
     """
-    Create a test blockmodel DataFrame.
+    Create a demo blockmodel DataFrame or Parquet file.
 
     Args:
         shape: Shape of the block model (x, y, z).
         block_size: Size of each block (x, y, z).
         corner: The lower left (minimum) corner of the block model.
-        is_tensor: If True, create a tensor block model. Default is False, which creates a regular block model.
-            The MultiIndex levels for a regular model are x, y, z.  For a tensor model they are x, y, z, dx, dy, dz.
-            The tensor model created is a special case where dx, dy, dz are the same for all blocks.
-
+        parquet_filepath: If provided, save the DataFrame to this Parquet file and return the file path.
+    Returns:
+        DataFrame or Parquet file path (Path)
     """
 
     num_blocks = np.prod(shape)
@@ -38,39 +40,35 @@ def create_test_blockmodel(shape: tuple[int, int, int],
     c_order_xyz = np.arange(num_blocks)
 
     # assume the surface of the highest block is the topo surface
-    surface_rl = corner[2] + shape[2] * block_size[2]
+    surface_rl = np.max(zz_flat_c) + block_size[2] / 2
 
     # Create the DataFrame
     df = pd.DataFrame({
         'x': xx_flat_c,
         'y': yy_flat_c,
         'z': zz_flat_c,
-        'c_style_xyz': c_order_xyz})
+        'c_order_xyz': c_order_xyz})
 
     # Set the index to x, y, z
     df.set_index(keys=['x', 'y', 'z'], inplace=True)
     df.sort_index(level=['x', 'y', 'z'], inplace=True)
+    # create the f_order_zyx column
     df.sort_index(level=['z', 'y', 'x'], inplace=True)
-    df['f_style_zyx'] = c_order_xyz
+    df['f_order_zyx'] = c_order_xyz
+    # set order back to c_order_xyz
     df.sort_index(level=['x', 'y', 'z'], inplace=True)
 
     df['depth'] = surface_rl - zz_flat_c
 
     # Check the ordering - confirm that the c_order_xyz and f_order_zyx columns are in the correct order
-    assert np.array_equal(df.sort_index(level=['x', 'y', 'z'])['c_style_xyz'].values, np.arange(num_blocks))
-    assert np.array_equal(df.sort_index(level=['z', 'y', 'x'])['f_style_zyx'].values, np.arange(num_blocks))
+    assert np.array_equal(df.sort_index(level=['x', 'y', 'z'])['c_order_xyz'].values, np.arange(num_blocks))
+    assert np.array_equal(df.sort_index(level=['z', 'y', 'x'])['f_order_zyx'].values, np.arange(num_blocks))
 
-    # Check the depth using a pandas groupby
-    depth_group = df.groupby('z')['depth'].unique().apply(lambda x: x[0]).sort_index(ascending=False)
-    assert np.all(surface_rl - depth_group.diff().index == depth_group.values)
+    # TODO: remove this temp code
+    # drop a single record to test sparse input
+    # df = df.drop(df.index[-1])
 
-    if is_tensor:
-        # Create the dx, dy, dz levels
-        df['dx'] = block_size[0]
-        df['dy'] = block_size[1]
-        df['dz'] = block_size[2]
-
-        # Set the index to x, y, z, dx, dy, dz
-        df.set_index(keys=['dx', 'dy', 'dz'], append=True, inplace=True)
-
+    if parquet_filepath is not None:
+        df.to_parquet(parquet_filepath)
+        return parquet_filepath
     return df

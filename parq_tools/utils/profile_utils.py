@@ -1,19 +1,60 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Optional, Union
 import pandas as pd
 import os
 
+from matplotlib.pyplot import title
 from ydata_profiling import ProfileReport
 
 from parq_tools.utils import atomic_output_file
+from parq_tools.utils.optional_imports import get_tqdm
 
-try:
-    # noinspection PyUnresolvedReferences
-    from tqdm import tqdm
 
-    HAS_TQDM = True
-except ImportError:
-    HAS_TQDM = False
+@dataclass
+class ProfileMetadata:
+    """Metadata for profiling a Parquet file.
+
+    This class is used to store metadata that can be included in the profile report.
+    Only selected keys are allowed.
+    """
+
+    description: Optional[str] = None
+    creator: Optional[str] = None
+    author: Optional[str] = None
+    url: Optional[str] = None
+    copyright_year: Optional[int] = None
+    copyright_holder: Optional[str] = None
+
+    def to_dict(self) -> dict[str, Union[str, int]]:
+        """Convert the metadata to a dictionary, omitting empty or None values."""
+        return {
+            k: v for k, v in {
+                "description": self.description,
+                "creator": self.creator,
+                "author": self.author,
+                "url": self.url,
+                "copyright_year": self.copyright_year,
+                "copyright_holder": self.copyright_holder
+            }.items() if v is not None
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Union[str, int]]) -> 'ProfileMetadata':
+        """Create a ProfileMetadata instance from a dictionary."""
+        return cls(
+            description=data.get("description"),
+            creator=data.get("creator"),
+            author=data.get("author"),
+            url=data.get("url"),
+            copyright_year=data.get("copyright_year"),
+            copyright_holder=data.get("copyright_holder"))
+
+    def __str__(self) -> str:
+        """Return a string representation of the metadata."""
+        return f"ProfileMetadata(description={self.description}, creator={self.creator}, " \
+               f"author={self.author}, url={self.url}, copyright_year={self.copyright_year}, " \
+               f"copyright_holder={self.copyright_holder})"
 
 
 class ColumnarProfileReport:
@@ -26,7 +67,10 @@ class ColumnarProfileReport:
                  column_generator: Iterator[pd.Series],
                  column_count: Optional[int] = None,
                  batch_size: int = 1,
-                 show_progress: bool = True):
+                 show_progress: bool = True,
+                 title: Optional[str] = "Profile Report",
+                 dataset_metadata: Optional[ProfileMetadata] = None,
+                 column_descriptions: Optional[dict[str, str]] = None):
         """
         Initialize the ColumnarProfileReport.
         This profiler processes columns in batches, allowing for profiling large datasets without loading them
@@ -37,12 +81,19 @@ class ColumnarProfileReport:
             column_count: The total number of columns used by the progressbar.
             batch_size: The number of columns to process in each batch.
             show_progress: If True, displays a progress bar during profiling.
+            title: The title of the report.
+            dataset_metadata: Optional dataset metadata to include in the report.
+            column_descriptions: Optional descriptions for each column, used in the report.
         """
 
         self.column_generator = column_generator
         self.column_count = column_count
         self.batch_size = batch_size
-        self.show_progress = show_progress and HAS_TQDM
+        self.show_progress = show_progress
+        self.title = title
+        self.metadata = dataset_metadata.to_dict() if dataset_metadata else {}
+        self.column_descriptions = column_descriptions if column_descriptions else {}
+        self.tqdm = get_tqdm()
         self.head_report: ProfileReport | None = None
         self.report: ProfileReport | None = None
         self.index_memory: int = 0
@@ -65,8 +116,8 @@ class ColumnarProfileReport:
                 yield batch
 
         total_progress_steps = total_columns + 1 if total_columns else None
-        progress = tqdm(total=total_progress_steps, desc="Profiling columns",
-                        leave=True) if self.show_progress else None
+        progress = self.tqdm(total=total_progress_steps, desc="Profiling columns",
+                             leave=True) if self.show_progress else None
 
         for batch in batched(self.column_generator, self.batch_size):
             batch_names = []
@@ -79,7 +130,9 @@ class ColumnarProfileReport:
                     batch_names.append(f"col_{len(col_names) + len(batch_names)}")
             df = pd.DataFrame({name: col for name, col in zip(batch_names, batch)})
             head_chunks.append(df.head())
-            report = ProfileReport(df, minimal=True, explorative=False, progress_bar=False)
+            report = ProfileReport(df, minimal=True, explorative=False, progress_bar=False,
+                                   title=self.title, dataset=self.metadata,
+                                   variables={"descriptions": self.column_descriptions})
             # descriptions.append(report.get_description())  # issue with unmanage progress bar
             desc = BatchDescription(report.config, df, report.summarizer, report.typeset)
             descriptions.append(desc)
@@ -93,7 +146,10 @@ class ColumnarProfileReport:
 
         # profile the head chunks
         head_df = pd.concat(head_chunks, axis=1)
-        head_report = ProfileReport(head_df, minimal=True, explorative=False, progress_bar=False)
+        head_report = ProfileReport(head_df,
+                                    minimal=True, explorative=False, progress_bar=False,
+                                    title=self.title, dataset=self.metadata,
+                                    variables={"descriptions": self.column_descriptions})
         if progress:
             progress.update(1)
             progress.close()

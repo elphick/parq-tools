@@ -3,7 +3,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from pathlib import Path
 import tempfile
-from parq_tools.parq_rename import rename_parquet_columns
+from parq_tools.parq_schema_tools import rename_and_update_metadata
 
 @pytest.fixture
 def sample_parquet(tmp_path):
@@ -19,14 +19,14 @@ def sample_parquet(tmp_path):
 def test_rename_columns_all(sample_parquet, tmp_path):
     output = tmp_path / "output.parquet"
     rename_map = {"a": "x", "b": "y"}
-    rename_parquet_columns(sample_parquet, output, rename_map, show_progress=True)
+    rename_and_update_metadata(sample_parquet, output, rename_map, show_progress=True)
     table = pq.read_table(output)
     assert set(table.column_names) == {"x", "y", "c"}
 
 def test_rename_columns_selected(sample_parquet, tmp_path):
     output = tmp_path / "output_selected.parquet"
     rename_map = {"a": "x", "b": "y"}
-    rename_parquet_columns(sample_parquet, output, rename_map, return_all_columns=False)
+    rename_and_update_metadata(sample_parquet, output, rename_map, return_all_columns=False)
     table = pq.read_table(output)
     assert set(table.column_names) == {"x", "y"}
     assert table.num_rows == 3
@@ -34,7 +34,7 @@ def test_rename_columns_selected(sample_parquet, tmp_path):
 def test_chunking(sample_parquet, tmp_path):
     output = tmp_path / "output_chunked.parquet"
     rename_map = {"a": "x"}
-    rename_parquet_columns(sample_parquet, output, rename_map, chunk_size=1)
+    rename_and_update_metadata(sample_parquet, output, rename_map, chunk_size=1)
     table = pq.read_table(output)
     assert "x" in table.column_names
     assert table.num_rows == 3
