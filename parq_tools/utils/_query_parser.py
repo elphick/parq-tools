@@ -17,11 +17,12 @@ def get_filter_parser():
           | COLUMN "in" list -> in_expr
     COLUMN: /[a-zA-Z_][a-zA-Z0-9_]*/
     OP: ">" | "<" | ">=" | "<=" | "==" | "!="
-    VALUE: NUMBER | ESCAPED_STRING
+    VALUE: NUMBER | ESCAPED_STRING | SINGLE_QUOTED_STRING
     list: "[" [list_items] "]"
     list_items: list_item ("," list_item)*
-    list_item: NUMBER | ESCAPED_STRING
+    list_item: NUMBER | ESCAPED_STRING | SINGLE_QUOTED_STRING
     NUMBER: /\d+(\.\d+)?/
+    SINGLE_QUOTED_STRING: "'" /[^']*/ "'"
 
     %import common.ESCAPED_STRING
     %import common.WS
@@ -59,7 +60,7 @@ def build_filter_expression(filter_query: str, schema) -> pc.Expression:
         if hasattr(val_token, 'type'):
             if val_token.type == "NUMBER":
                 return float(val_token.value) if "." in val_token.value else int(val_token.value)
-            elif val_token.type == "ESCAPED_STRING":
+            elif val_token.type in ("ESCAPED_STRING", "SINGLE_QUOTED_STRING"):
                 return val_token.value[1:-1]  # Remove quotes
             else:
                 raise ValueError(f"Unsupported value type: {val_token.type}")
