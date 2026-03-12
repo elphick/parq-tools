@@ -5,10 +5,8 @@ import pandas as pd
 import os
 
 from matplotlib.pyplot import title
-from ydata_profiling import ProfileReport
-
 from parq_tools.utils import atomic_output_file
-from parq_tools.utils.optional_imports import get_tqdm
+from parq_tools.utils.optional_imports import get_tqdm, get_ydata_profile_report
 
 
 @dataclass
@@ -94,11 +92,14 @@ class ColumnarProfileReport:
         self.metadata = dataset_metadata.to_dict() if dataset_metadata else {}
         self.column_descriptions = column_descriptions if column_descriptions else {}
         self.tqdm = get_tqdm()
-        self.head_report: ProfileReport | None = None
-        self.report: ProfileReport | None = None
+        # Delay ydata_profiling import until actually profiling
+        self.head_report = None
+        self.report = None
         self.index_memory: int = 0
 
     def profile(self) -> None:
+        # Import ProfileReport lazily so module import does not require ydata_profiling
+        ProfileReport = get_ydata_profile_report("ColumnarProfileReport.profile()")
         col_names = []
         descriptions = []
         head_chunks: list[pd.DataFrame] = []
@@ -227,6 +228,8 @@ class BatchDescription:
     """
 
     def __init__(self, config, df, summarizer, typeset):
+        # Import heavy ydata_profiling pieces lazily
+        ProfileReport = get_ydata_profile_report("BatchDescription")
         from ydata_profiling.model.pandas.summary_pandas import pandas_describe_1d
         from ydata_profiling.model.table import get_table_stats
         from ydata_profiling.model.alerts import get_alerts

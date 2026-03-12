@@ -9,6 +9,7 @@ In cases where a parquet may be very wide, and you want to profile it column by 
 `ParquetProfileReport` class from the `parq_tools.utils.profile_utils` module.
 This allows you to generate a profile report by loading columns in batches, reducing memory consumption.
 """
+import logging
 import tempfile
 
 import pandas as pd
@@ -19,6 +20,8 @@ from parq_tools import ParquetProfileReport
 # %%
 # Create a Parquet file for profiling
 # -----------------------------------
+
+logging.basicConfig(level=logging.INFO)
 
 temp_dir = Path(tempfile.gettempdir()) / "profile_parquet_example"
 temp_dir.mkdir(parents=True, exist_ok=True)

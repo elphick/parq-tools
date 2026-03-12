@@ -51,39 +51,46 @@ jobs:
       - name: Test with pytest
         run: |
           poetry run pytest
-
+          
   coverage-badge:
     runs-on: ubuntu-latest
     needs: build
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
           python-version: 3.12
+  
       - name: Install Poetry
         run: pip install poetry==1.5.0
+  
       - name: Install dependencies
         run: poetry install --all-extras --no-interaction
+  
       - name: Generate coverage report
         run: |
-          poetry run pip install coverage
-          poetry run pip install pkg-resources
           poetry run coverage run -m pytest
           poetry run coverage xml
+  
       - name: Generate coverage badge
-        uses: tj-actions/coverage-badge-py@v2
-        with:
-          output: badges/coverage.svg
+        run: |
+          # Ensure setuptools version that still includes pkg_resources
+          poetry run pip install "setuptools<82" coverage-badge
+          poetry run coverage-badge -o badges/coverage.svg -f
+  
       - name: Ensure destination directory and copy badge
         run: |
           mkdir -p docs/source/_static/badges
           cp badges/coverage.svg docs/source/_static/badges/coverage.svg
+  
       - name: Upload coverage badge
         uses: actions/upload-artifact@v4
         with:
           name: coverage-badge
           path: docs/source/_static/badges/coverage.svg
+  
       - name: Commit and push coverage badge
         if: github.event_name == 'push'
         run: |
@@ -94,4 +101,3 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          path: badges/coverage.svg

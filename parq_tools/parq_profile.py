@@ -7,17 +7,18 @@ Main API:
 
 - ParquetProfileReport: Class for generating, saving, and displaying profile reports for Parquet files.
 """
-import json
+import contextlib
+from io import StringIO
 from pathlib import Path
 from typing import Iterator, Optional, List, Union
 import pandas as pd
 import pyarrow.parquet as pq
 
-from ydata_profiling import ProfileReport
 
 from parq_tools.utils import atomic_output_file
 from parq_tools.utils.metadata_utils import get_table_metadata, get_column_metadata, get_pandas_metadata
 from parq_tools.utils.profile_utils import ColumnarProfileReport, ProfileMetadata
+from parq_tools.utils.optional_imports import get_ydata_profile_report
 
 
 def parquet_column_generator(parquet_path: Union[str, Path],
@@ -84,7 +85,7 @@ class ParquetProfileReport:
         self.batch_size = batch_size
         self.show_progress = show_progress
         self.title = title
-        self.report: Optional[ProfileReport] = None
+        self.report: Optional[object] = None
 
         metadata = dataset_metadata if isinstance(dataset_metadata, ProfileMetadata) else ProfileMetadata.from_dict(
             dataset_metadata) if dataset_metadata else None
@@ -104,12 +105,10 @@ class ParquetProfileReport:
             self.column_descriptions = column_descriptions
 
     def profile(self) -> 'ParquetProfileReport':
-        """
-        Profiles the Parquet file
-
-        """
+        """Profiles the Parquet file."""
         if self.batch_size is None:
             # Native ydata profiling (no chunking)
+            ProfileReport = get_ydata_profile_report("ParquetProfileReport.profile()")
             df = pd.read_parquet(self.parquet_path, columns=self.columns)
             self.report = ProfileReport(df, minimal=True, explorative=False, progress_bar=False,
                                         title=self.title, dataset=self.dataset_metadata.to_dict(),
