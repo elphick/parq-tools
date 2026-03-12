@@ -68,6 +68,7 @@ jobs:
       - name: Generate coverage report
         run: |
           poetry run pip install coverage
+          poetry run pip install pkg-resources
           poetry run coverage run -m pytest
           poetry run coverage xml
       - name: Generate coverage badge
