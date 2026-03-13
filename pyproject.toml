@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "parq-tools"
-version = "0.3.2"
+version = "0.3.3"
 description = "A collection of utilities for efficiently working with **large-scale** Parquet datasets."
 authors = ["Greg <11791585+elphick@users.noreply.github.com>"]
 readme = "README.md"
