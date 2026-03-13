@@ -1,4 +1,3 @@
-import hashlib
 import logging
 import shutil
 import tempfile
@@ -7,7 +6,7 @@ from pathlib import Path
 import os
 from typing import ContextManager, Union, Callable, Any
 
-from parq_tools.utils.hash_utils import fast_file_check, file_hash, files_match
+from parq_tools.utils.hash_utils import files_match
 
 logger = logging.getLogger(__name__)
 
@@ -77,37 +76,35 @@ def atomic_output_dir(final_dir: Path, suffix: str = ".tmp") -> ContextManager[P
             raise
 
 
-def atomic_file_copy(src: Path,
-                     dst: Path,
-                     chunk_size=1024 * 1024,
-                     hash_method: Union[str, Callable[[], Any]] = 'sha256',
-                     show_progress: bool = False,
-                     force: bool = False
-                     ) -> Path:
+def atomic_file_copy(
+    src: Path,
+    dst: Path,
+    chunk_size: int = 1024 * 1024,
+    hash_method: Union[str, Callable[[], Any]] = "sha256",
+    show_progress: bool = False,
+    force: bool = False,
+) -> Path:
     """
     Copy a file atomically from `src` to `dst`.
-
-    Args:
-        src: Path to the source file.
-        dst: Path to the destination file or directory.
-        chunk_size: Size of chunks to read/write.
-        hash_method: One of 'fast', 'sha256', 'xxhash' or a provided hash function.
-        show_progress: Show progress bar if True.
-        force: If True, copy even if files match.
-
-    Returns:
-        Path to the copied file.
     """
     src = Path(src)
     dst = Path(dst)
+
     if dst.is_dir():
         dst = dst / src.name
 
-    if not force and files_match(src, dst, hash_method=hash_method, chunk_size=chunk_size, show_progress=show_progress):
+    # Fast exit if dest exists and matches
+    if not force and files_match(
+        src, dst,
+        hash_method=hash_method,
+        chunk_size=chunk_size,
+        show_progress=False,   # no need for progress here
+    ):
         logger.debug(f"File {dst} already exists and is identical, skipping.")
         return dst
 
     total = src.stat().st_size
+
     try:
         from tqdm import tqdm
         use_tqdm = True
@@ -115,18 +112,42 @@ def atomic_file_copy(src: Path,
         use_tqdm = False
 
     with atomic_output_file(dst) as tmp_dst:
-        with open(src, "rb") as fsrc, open(tmp_dst, "wb") as fdst:
-            if use_tqdm and show_progress:
-                with tqdm(total=total, unit="B", unit_scale=True, desc=f"Copying {src.name}") as pbar:
+        tmp_dst = Path(tmp_dst)
+
+        if show_progress and use_tqdm:
+            # Manual chunked copy with progress
+            with open(src, "rb") as fsrc, open(tmp_dst, "wb") as fdst:
+                with tqdm(
+                    total=total,
+                    unit="B",
+                    unit_scale=True,
+                    desc=f"Copying {src.name}",
+                ) as pbar:
                     for chunk in iter(lambda: fsrc.read(chunk_size), b""):
                         fdst.write(chunk)
                         pbar.update(len(chunk))
-            else:
-                for chunk in iter(lambda: fsrc.read(chunk_size), b""):
-                    fdst.write(chunk)
-            shutil.copystat(src, tmp_dst)
+        else:
+            # Let shutil do the heavy lifting (no progress bar)
+            shutil.copy2(src, tmp_dst)
 
-    if not files_match(src, dst, hash_method=hash_method, chunk_size=chunk_size, show_progress=show_progress):
-        logger.error(f"{hash_method} mismatch after copy: {src} -> {dst}")
-        raise RuntimeError(f"{hash_method} mismatch after copy: {src} -> {dst}")
+        # At this point tmp_dst is fully written
+        tmp_size = tmp_dst.stat().st_size
+        logger.debug(f"Temp file size before replace: {tmp_size}")
+
+        # Verify the temp file, NOT dst
+        if not files_match(
+            src, tmp_dst,
+            hash_method=hash_method,
+            chunk_size=chunk_size,
+            show_progress=False,
+        ):
+            logger.error(f"{hash_method} mismatch after copy to temp: {src} -> {tmp_dst}")
+            # Clean-up (atomic_output_file will try to remove tmp on exception anyway)
+            raise RuntimeError(f"{hash_method} mismatch after copy: {src} -> {dst}")
+
+    # Once we exit the 'with atomic_output_file', tmp_dst has been atomically
+    # renamed to dst by os.replace(tmp_dst, dst).
+    final_size = dst.stat().st_size
+    logger.debug(f"Final file size after replace: {final_size}")
+
     return dst
