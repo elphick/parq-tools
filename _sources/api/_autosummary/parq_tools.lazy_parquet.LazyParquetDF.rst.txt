@@ -1,0 +1,44 @@
+parq\_tools.lazy\_parquet.LazyParquetDF
+=======================================
+
+.. currentmodule:: parq_tools.lazy_parquet
+
+.. autoclass:: LazyParquetDF
+   :members:
+   :special-members: __add__, __mul__
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LazyParquetDF.__init__
+      ~LazyParquetDF.add_column
+      ~LazyParquetDF.describe
+      ~LazyParquetDF.filter
+      ~LazyParquetDF.head
+      ~LazyParquetDF.info
+      ~LazyParquetDF.iter_row_chunks
+      ~LazyParquetDF.load_columns
+      ~LazyParquetDF.query
+      ~LazyParquetDF.save
+      ~LazyParquetDF.to_pandas
+      ~LazyParquetDF.to_parquet
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~LazyParquetDF.columns
+      ~LazyParquetDF.dtypes
+      ~LazyParquetDF.index
+      ~LazyParquetDF.shape
+   
+   

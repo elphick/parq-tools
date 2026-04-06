@@ -1,0 +1,6 @@
+parq\_tools.utils.optional\_imports.get\_ydata\_profile\_report
+===============================================================
+
+.. currentmodule:: parq_tools.utils.optional_imports
+
+.. autofunction:: get_ydata_profile_report

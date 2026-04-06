@@ -1,0 +1,32 @@
+﻿parq\_tools.lazy\_parquet
+=========================
+
+.. automodule:: parq_tools.lazy_parquet
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+   
+      LazyLocIndexer
+      LazyParquetDF
+      LazyParquetDataFrame
+   
+   
+
+   
+   
+   
+
+
+

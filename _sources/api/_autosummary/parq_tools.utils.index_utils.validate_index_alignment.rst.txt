@@ -1,0 +1,6 @@
+parq\_tools.utils.index\_utils.validate\_index\_alignment
+=========================================================
+
+.. currentmodule:: parq_tools.utils.index_utils
+
+.. autofunction:: validate_index_alignment

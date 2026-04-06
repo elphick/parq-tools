@@ -1,0 +1,31 @@
+﻿parq\_tools.calculated\_columns
+===============================
+
+.. automodule:: parq_tools.calculated_columns
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+   
+      CalculatedColumn
+      CalculatedParquetReader
+   
+   
+
+   
+   
+   
+
+
+

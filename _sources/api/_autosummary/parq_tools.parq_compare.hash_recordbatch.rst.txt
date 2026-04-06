@@ -1,0 +1,6 @@
+parq\_tools.parq\_compare.hash\_recordbatch
+===========================================
+
+.. currentmodule:: parq_tools.parq_compare
+
+.. autofunction:: hash_recordbatch

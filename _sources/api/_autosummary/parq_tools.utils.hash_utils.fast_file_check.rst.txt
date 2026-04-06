@@ -1,0 +1,6 @@
+parq\_tools.utils.hash\_utils.fast\_file\_check
+===============================================
+
+.. currentmodule:: parq_tools.utils.hash_utils
+
+.. autofunction:: fast_file_check

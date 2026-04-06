@@ -1,0 +1,31 @@
+﻿parq\_tools.parq\_schema\_tools
+===============================
+
+.. automodule:: parq_tools.parq_schema_tools
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      rename_and_update_metadata
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

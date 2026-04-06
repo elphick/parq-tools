@@ -1,0 +1,38 @@
+﻿parq\_tools.parq\_concat
+========================
+
+.. automodule:: parq_tools.parq_concat
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      concat_parquet_files
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+   
+      ParquetConcat
+   
+   
+
+   
+   
+   
+
+
+
