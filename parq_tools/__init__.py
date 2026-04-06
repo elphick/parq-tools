@@ -8,6 +8,7 @@ from .parq_filter import filter_parquet_file
 from .parq_schema_tools import rename_and_update_metadata
 from .parq_profile import ParquetProfileReport
 from .utils.index_utils import reindex_parquet, sort_parquet_file, validate_index_alignment
+from .lazy_parquet import LazyParquetDF
 
 try:
     __version__ = metadata.version('parq_tools')
