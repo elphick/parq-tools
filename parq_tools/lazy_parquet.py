@@ -1,9 +1,547 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, List, Optional, Sequence, Set, Tuple, TextIO
+
+import sys
+import warnings
 
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+
+
+# PyArrow-style predicate: (column_name, operator, value)
+Filter = Tuple[str, str, object]
+
+
+class LazyParquetDF:
+    """Lazy, column-on-demand DataFrame backed by a Parquet file.
+
+    This lightweight, DataFrame-like object exposes a familiar subset of the
+    pandas API, but loads data lazily from a Parquet file. Columns are only
+    materialized into memory when they are first accessed.
+
+    Parameters
+    ----------
+    path : Path
+        Path to the Parquet file.
+    index_col : str or sequence of str, optional
+        Optional column(s) to use as the index. If provided, those columns are
+        eagerly loaded and set as the index (supporting both single index and
+        MultiIndex).
+    """
+
+    def __init__(self, path: Path, index_col: Optional[Sequence[str] | str] = None) -> None:
+        self._path = Path(path)
+        self._index_col: Optional[Sequence[str] | str] = index_col
+
+        # Internal cache of loaded/mutated columns as a pandas DataFrame.
+        # This frame always has the logical index (either RangeIndex or an
+        # explicit index based on index_col / pandas metadata) so we can
+        # align slices for chunked operations.
+        # We always initialise it with the correct index immediately.
+        self._df = pd.DataFrame()
+        self._parquet_file = pq.ParquetFile(self._path)
+        self._schema = self._parquet_file.schema
+        self._available_columns: List[str] = list(self._schema.names)
+        self._column_order: List[str] = list(self._available_columns)
+        self._mutated_schema_columns: Set[str] = set()
+        self._new_columns: Set[str] = set()
+
+        self._n_rows: int = sum(
+            self._parquet_file.metadata.row_group(i).num_rows
+            for i in range(self._parquet_file.metadata.num_row_groups)
+        )
+
+        # Index strategy:
+        # 1) Explicit index_col -> build index from those columns.
+        # 2) Otherwise, delegate index reconstruction to pandas.read_parquet,
+        #    so we exactly mirror pandas’ behaviour (named index or RangeIndex).
+        if self._index_col is not None:
+            index_cols: List[str]
+            if isinstance(self._index_col, str):
+                index_cols = [self._index_col]
+            else:
+                if not isinstance(self._index_col, Sequence):
+                    raise TypeError("index_col must be str or sequence of str")
+                index_cols = list(self._index_col)
+
+            missing = [c for c in index_cols if c not in self._available_columns]
+            if missing:
+                raise KeyError(
+                    f"index_col(s) {missing!r} not found in Parquet schema."
+                )
+
+            table = self._parquet_file.read(columns=index_cols)
+            idx_df = table.to_pandas()[index_cols]
+            if len(index_cols) == 1:
+                # Fix typo: use index_cols, not indexCols
+                idx = idx_df[index_cols[0]].rename(index_cols[0])
+                self._df = pd.DataFrame(index=idx)
+            else:
+                mi = pd.MultiIndex.from_frame(idx_df)
+                mi.set_names(index_cols, inplace=True)
+                self._df = pd.DataFrame(index=mi)
+        else:
+            # No explicit index override. Let pandas interpret any stored
+            # metadata and reconstruct the logical index. For parquet files
+            # written without an index, this will just be a RangeIndex. For
+            # files like the test parquet (df.set_index("i").to_parquet),
+            # this will be an Index named "i", matching the test’s
+            # expectations and pd.read_parquet.
+            try:
+                pdf = pd.read_parquet(self._path)
+                # Use pandas to reconstruct the logical index exactly as it
+                # interprets the stored metadata.
+                idx = pdf.index
+                self._df = pd.DataFrame(index=idx)
+
+                # When the index comes from pandas metadata (e.g. df.set_index("i")),
+                # the corresponding index name(s) should not appear in the logical
+                # columns list; they are part of the index, not data columns.
+                index_names: list[str] = []
+                if isinstance(idx, pd.MultiIndex):
+                    # MultiIndex.names may contain None; filter those out.
+                    index_names = [n for n in idx.names if n is not None]
+                else:
+                    if idx.name is not None:
+                        index_names = [idx.name]
+
+                if index_names:
+                    # Remove any index names from the logical column order so that
+                    # LazyParquetDF.columns only exposes data columns, matching
+                    # pd.read_parquet for metadata-indexed files.
+                    self._column_order = [
+                        c for c in self._column_order if c not in index_names
+                    ]
+            except Exception:
+                # Fallback: if pandas cannot read the parquet for any reason,
+                # we still provide a sensible positional index based on the
+                # stored row count.
+                self._df = pd.DataFrame(index=pd.RangeIndex(self._n_rows))
+
+    # ------------------------------------------------------------------ #
+    # Basic DataFrame-like properties
+    # ------------------------------------------------------------------ #
+
+    @property
+    def columns(self) -> List[str]:
+        """List of all logical column names.
+
+        This includes Parquet schema columns in schema order, minus any index
+        columns (when the index is constructed from pandas metadata or via the
+        explicit index_col argument), followed by any new columns that have
+        been added via assignment. The order is preserved across operations
+        and is used by chunked iteration and write-back.
+        """
+
+        return list(self._column_order)
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        """Tuple of (number of rows, number of columns).
+
+        The column count reflects the *logical* data columns exposed via
+        :attr:`columns`, excluding any index columns that are represented
+        solely in the index (either reconstructed from pandas metadata or
+        via ``index_col``).
+        """
+
+        return self._n_rows, len(self.columns)
+
+    def __len__(self) -> int:
+        """Return the number of rows in the dataset."""
+
+        return self._n_rows
+
+    @property
+    def index(self) -> pd.Index:
+        """Index for the dataset.
+
+        Returns a RangeIndex when no data has been loaded yet, or the index
+        of the internal cached DataFrame (which may be a MultiIndex).
+        """
+
+        if self._df is not None and len(self._df.index) > 0:
+            return self._df.index
+        return pd.RangeIndex(self._n_rows)
+
+    @property
+    def dtypes(self) -> pd.Series:
+        """Return dtypes for columns currently materialised in the cache.
+
+        This mirrors :attr:`pandas.DataFrame.dtypes`: only columns that
+        actually exist in the internal pandas DataFrame are reported.
+        Lazily-backed columns that have not yet been loaded are not
+        included; use :meth:`info` to inspect all available columns and
+        their lazy/loaded status.
+        """
+
+        return self._df.dtypes
+
+    # ------------------------------------------------------------------ #
+    # Column access and loading
+    # ------------------------------------------------------------------ #
+
+    def __getitem__(self, key: str) -> pd.Series:
+        """Return a column as a pandas Series, loading it lazily if needed."""
+
+        if key not in self._column_order:
+            raise KeyError(f"Column {key!r} not found in lazy frame.")
+        if key in self._available_columns and key not in self._df.columns:
+            self._ensure_columns_loaded([key])
+        return self._df[key]
+
+    def __setitem__(self, key: str, value: object) -> None:
+        """Add or overwrite a column.
+
+        The value must be broadcastable to the number of rows in the dataset.
+        """
+
+        if self._df.empty:
+            self._df = pd.DataFrame(index=self.index)
+
+        series = pd.Series(value, index=self.index)
+        if len(series) != self._n_rows:
+            raise ValueError(
+                f"Length of assigned column ({len(series)}) does not match "
+                f"number of rows ({self._n_rows})."
+            )
+
+        self._df[key] = series
+
+        if key in self._available_columns:
+            self._mutated_schema_columns.add(key)
+        else:
+            self._new_columns.add(key)
+            if key not in self._column_order:
+                self._column_order.append(key)
+
+    def add_column(self, name: str, data: object) -> None:
+        """Explicit helper for adding a new column (``df[name] = data``)."""
+
+        self[name] = data
+
+    def load_columns(self, columns: Iterable[str]) -> None:
+        """Eagerly load one or more columns into the internal cache."""
+
+        cols = list(columns)
+        missing = [c for c in cols if c not in self._available_columns]
+        if missing:
+            raise KeyError(f"Columns not found in Parquet schema: {missing}")
+        self._ensure_columns_loaded(cols)
+
+    def to_pandas(self) -> pd.DataFrame:
+        """Materialize all columns as a pandas DataFrame."""
+
+        missing = [
+            c
+            for c in self._available_columns
+            if c not in self._df.columns and c not in self._mutated_schema_columns
+        ]
+        if missing:
+            self._ensure_columns_loaded(missing)
+
+        pdf = self._df.copy()
+
+        # If an explicit index_col was provided, materialise a MultiIndex (or
+        # single Index) on the returned DataFrame. This makes the external
+        # behaviour match ``pd.read_parquet(...).set_index(index_col)`` while
+        # allowing the internal cache to use a simpler index for lazy ops.
+        idx_cols: List[str] = []
+        if self._index_col is not None:
+            if isinstance(self._index_col, str):
+                idx_cols = [self._index_col]
+            else:
+                idx_cols = list(self._index_col)
+            if all(col in pdf.columns for col in idx_cols):
+                pdf = pdf.set_index(idx_cols)
+
+        for col in pdf.columns:
+            if col not in self._column_order:
+                self._column_order.append(col)
+
+        # If we have converted some columns into an index, they should no
+        # longer be part of the returned column order.
+        effective_columns = [
+            c for c in self._column_order if c not in idx_cols
+        ]
+        return pdf[effective_columns]
+
+    # ------------------------------------------------------------------ #
+    # Simple pandas-like helpers
+    # ------------------------------------------------------------------ #
+
+    def head(self, n: int = 5) -> pd.DataFrame:
+        """Return the first *n* rows as a pandas DataFrame."""
+
+        table = self._parquet_file.read_row_group(0, columns=self._available_columns)
+        pdf = table.to_pandas()
+        return pdf.head(n)
+
+    def describe(
+        self,
+        percentiles: Optional[list[float]] = None,
+        include=None,
+        exclude=None,
+        datetime_is_numeric: bool = False,
+    ) -> pd.DataFrame:
+        """Generate descriptive statistics of the dataset."""
+
+        pdf = self.to_pandas()
+        # pandas < 1.1 does not support datetime_is_numeric; pass only
+        # the arguments that are universally supported.
+        return pdf.describe(
+            percentiles=percentiles,
+            include=include,
+            exclude=exclude,
+        )
+
+    def info(self, buf: Optional[TextIO] = None) -> None:
+        """Print a concise summary of the lazy Parquet-backed DataFrame."""
+
+        if buf is None:
+            buf = sys.stdout
+
+        n_rows, n_cols = self.shape
+        header = (
+            f"<LazyParquetDF>\n"
+            f"Path: {self._path}\n"
+            f"Rows: {n_rows}, Columns: {n_cols}\n"
+        )
+        print(header, file=buf)
+
+        print("Columns:", file=buf)
+        loaded_cols = set(self._df.columns)
+
+        for name in self._available_columns:
+            if name in loaded_cols:
+                series = self._df[name]
+                non_null = series.count()
+                dtype = series.dtype
+                status = "loaded"
+            else:
+                # Use the logical schema field for type information without
+                # attempting to read any data or rely on column index lookup.
+                # ``ParquetSchema`` exposes fields positionally; we look up the
+                # index of the column by name first, then fetch the field.
+                try:
+                    idx = self._schema.get_field_index(name)
+                except AttributeError:
+                    # Older pyarrow: fallback to a simple name lookup over
+                    # ``names`` and then index via ``column``.
+                    try:
+                        idx = self._schema.names.index(name)
+                    except ValueError:
+                        idx = -1
+
+                if idx == -1:
+                    # Should not happen for a valid schema-backed column, but
+                    # be defensive and mark it as object.
+                    field_type = "object"
+                else:
+                    try:
+                        field = self._schema.column(idx)
+                        field_type = field.physical_type
+                    except Exception:
+                        field_type = "object"
+
+                non_null = "lazy"
+                dtype = field_type
+                status = "lazy"
+
+            print(
+                f"  - {name}: non-null={non_null}, dtype={dtype}, status={status}",
+                file=buf,
+            )
+
+    # ------------------------------------------------------------------ #
+    # Filtering & query
+    # ------------------------------------------------------------------ #
+
+    def filter(self, *predicates: Filter) -> pd.DataFrame:
+        """Filter rows using explicit PyArrow-style predicate tuples."""
+
+        if not predicates:
+            raise ValueError("At least one filter predicate must be supplied.")
+
+        predicate_cols = [col for col, _, _ in predicates]
+        missing = [c for c in predicate_cols if c not in self._available_columns]
+        if missing:
+            raise KeyError(f"Predicate columns not in schema: {missing}")
+
+        table = pq.read_table(
+            self._path,
+            columns=predicate_cols,
+            filters=list(predicates),
+        )
+        pdf = table.to_pandas()
+        return pdf
+
+    def query(self, expr: str) -> pd.DataFrame:
+        """Evaluate a boolean expression using pandas-style query syntax."""
+
+        pdf = self.to_pandas()
+        return pdf.query(expr)
+
+    # ------------------------------------------------------------------ #
+    # Chunked iteration & write-back
+    # ------------------------------------------------------------------ #
+
+    def iter_row_chunks(
+        self,
+        chunk_size: int = 100_000,
+        columns: Optional[Iterable[str]] = None,
+    ) -> Iterable[pd.DataFrame]:
+        """Iterate over the dataset in row-wise chunks."""
+
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be positive")
+
+        cols = list(columns) if columns is not None else list(self.columns)
+        unknown = [c for c in cols if c not in self.columns]
+        if unknown:
+            raise KeyError(f"Columns not found in lazy frame: {unknown}")
+
+        parquet_cols = [
+            c
+            for c in cols
+            if c in self._available_columns and c not in self._mutated_schema_columns
+        ]
+        computed_cols = [
+            c
+            for c in cols
+            if c in self._new_columns or c in self._mutated_schema_columns
+        ]
+
+        if computed_cols and self._df.empty:
+            raise RuntimeError(
+                "Computed or mutated columns exist but internal frame is empty; "
+                "this is an internal inconsistency."
+            )
+
+        start = 0
+
+        if parquet_cols:
+            for batch in self._parquet_file.iter_batches(
+                batch_size=chunk_size, columns=parquet_cols
+            ):
+                pdf = batch.to_pandas()
+                n = len(pdf)
+
+                for col in computed_cols:
+                    col_series = self._df[col].iloc[start : start + n].reset_index(
+                        drop=True
+                    )
+                    pdf[col] = col_series
+
+                pdf = pdf[cols]
+
+                index_slice = self.index[start : start + n]
+                pdf.index = index_slice
+
+                start += n
+                yield pdf
+        else:
+            pdf = self.to_pandas()[cols]
+            while start < self._n_rows:
+                end = min(start + chunk_size, self._n_rows)
+                chunk = pdf.iloc[start:end]
+                start = end
+                yield chunk
+
+    def to_parquet(
+        self,
+        path: Path,
+        *,
+        allow_overwrite: bool = False,
+        chunk_size: Optional[int] = None,
+        **pq_write_kwargs: object,
+    ) -> None:
+        """Write the logical DataFrame to a Parquet file."""
+
+        target = Path(path)
+        if target.exists() and not allow_overwrite:
+            raise FileExistsError(f"Target file already exists: {target}")
+
+        if chunk_size is None:
+            pdf = self.to_pandas()
+            pdf.to_parquet(target, **pq_write_kwargs)
+            return
+
+        writer: Optional[pq.ParquetWriter] = None
+        try:
+            for chunk in self.iter_row_chunks(chunk_size=chunk_size, columns=self.columns):
+                table = pa.Table.from_pandas(chunk)
+                if writer is None:
+                    writer = pq.ParquetWriter(target, table.schema, **pq_write_kwargs)
+                writer.write_table(table)
+        finally:
+            if writer is not None:
+                writer.close()
+
+    def save(
+        self,
+        *,
+        allow_overwrite: bool = False,
+        chunk_size: int = 100_000,
+        **pq_write_kwargs: object,
+    ) -> None:
+        """Save the logical DataFrame back to its original Parquet path."""
+
+        self.to_parquet(
+            self._path,
+            allow_overwrite=allow_overwrite,
+            chunk_size=chunk_size,
+            **pq_write_kwargs,
+        )
+
+    # ------------------------------------------------------------------ #
+    # Internal helpers
+    # ------------------------------------------------------------------ #
+
+    def _ensure_columns_loaded(self, columns: List[str]) -> None:
+        """Load columns from Parquet into the internal cache if needed.
+
+        Parameters
+        ----------
+        columns : list[str]
+            Column names to ensure are present in the internal DataFrame.
+        """
+        to_load = [c for c in columns if c not in self._df.columns]
+        if not to_load:
+            return
+
+        # Use the existing ParquetFile for efficiency.
+        table = self._parquet_file.read(columns=to_load)
+        new_df = table.to_pandas()
+
+        if not self._df.empty:
+            # Align on index and join columns. When an index column has been
+            # set, ``new_df`` still carries it as a regular column; we align
+            # purely by row order to maintain consistency with the underlying
+            # Parquet layout.
+            new_df.index = pd.RangeIndex(len(new_df))
+            if isinstance(self._df.index, pd.RangeIndex):
+                # Simple positional join.
+                self._df = self._df.join(new_df, how="left")
+            else:
+                # For non-RangeIndex (e.g. MultiIndex based on index_col),
+                # align by position by temporarily resetting the index.
+                base = self._df.reset_index(drop=True)
+                base = base.join(new_df, how="left")
+                base.index = self._df.index
+                self._df = base
+        else:
+            # No columns loaded yet: start from an empty DataFrame that has
+            # the correct index (which may have been constructed in __init__).
+            # Attach the newly loaded columns by position without changing the
+            # existing index.
+            df = pd.DataFrame(index=pd.RangeIndex(len(new_df)))
+            df = df.join(new_df, how="left")
+            df.index = self.index
+            self._df = df
 
 
 class LazyLocIndexer:
@@ -28,14 +566,27 @@ class LazyLocIndexer:
 
 class LazyParquetDataFrame:
 
+    """Deprecated lazy Parquet DataFrame wrapper.
+
+    This class has been superseded by :class:`LazyParquetDF` and will be
+    removed in a future release.
+
+    Notes
+    -----
+    New code should use :class:`LazyParquetDF` instead. The
+    :class:`LazyParquetDataFrame` implementation is kept only for
+    backwards compatibility and is no longer actively developed.
+    """
+
     def __init__(self, path, index_cols: Optional[list[str]] = None):
-        """ Initialize a LazyParquetDataFrame.
-
-        Args:
-            path (str or Path): Path to the Parquet file.
-            index_cols (list[str]): List of column names, if any, to be used as index columns.
-
-        """
+        # Emit a deprecation warning on construction so that callers are
+        # redirected towards :class:`LazyParquetDF`.
+        warnings.warn(
+            "LazyParquetDataFrame is deprecated and will be removed in a "
+            "future release. Please use LazyParquetDF instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.path = path
         self._schema = pq.read_schema(path)
         self._loaded_columns = {}
