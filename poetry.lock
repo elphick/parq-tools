@@ -380,29 +380,6 @@ files = [
 dev = ["black", "coveralls", "mypy", "pre-commit", "pylint", "pytest (>=5)", "pytest-benchmark", "pytest-cov"]
 
 [[package]]
-name = "df-eval"
-version = "0.1.0"
-description = "A lightweight expression evaluation engine for pandas DataFrames"
-optional = true
-python-versions = ">=3.11"
-groups = ["main"]
-markers = "extra == \"df-eval\""
-files = []
-develop = false
-
-[package.dependencies]
-pandas = ">=2.0.0"
-
-[package.extras]
-dev = ["myst-parser (>=2.0.0)", "pytest (>=7.0.0)", "pytest-cov (>=4.0.0)", "sphinx (>=7.0.0)", "sphinx-autodoc-typehints (>=1.24.0)", "sphinx-book-theme (>=1.0.0)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/elphick/df-eval.git"
-reference = "main"
-resolved_reference = "15434140aa9e9862b2bf559e2648f3cab3e6d31e"
-
-[[package]]
 name = "docutils"
 version = "0.20.1"
 description = "Docutils -- Python Documentation Utilities"
@@ -2576,11 +2553,10 @@ unicode = ["tangled-up-in-unicode (==0.2.0)"]
 
 [extras]
 blockmodel = ["pyvista"]
-df-eval = ["df-eval"]
 profiling = ["setuptools", "ydata-profiling"]
 progress = ["tqdm"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.13"
-content-hash = "54817bb385549307d71e41847a69466e6d7aaf750917e54e4a81d062afe63413"
+content-hash = "4a3327cbe338a49d9802cefdfdc282b517db8c4483225e42ae2a40e115376faa"
