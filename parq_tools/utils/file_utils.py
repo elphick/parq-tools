@@ -2,8 +2,9 @@ import logging
 import shutil
 import tempfile
 from contextlib import contextmanager
-from pathlib import Path
 import os
+from pathlib import Path
+import pyarrow.parquet as pq
 from typing import ContextManager, Union, Callable, Any
 
 from parq_tools.utils.hash_utils import files_match
@@ -77,12 +78,12 @@ def atomic_output_dir(final_dir: Path, suffix: str = ".tmp") -> ContextManager[P
 
 
 def atomic_file_copy(
-    src: Path,
-    dst: Path,
-    chunk_size: int = 1024 * 1024,
-    hash_method: Union[str, Callable[[], Any]] = "sha256",
-    show_progress: bool = False,
-    force: bool = False,
+        src: Path,
+        dst: Path,
+        chunk_size: int = 1024 * 1024,
+        hash_method: Union[str, Callable[[], Any]] = "sha256",
+        show_progress: bool = False,
+        force: bool = False,
 ) -> Path:
     """
     Copy a file atomically from `src` to `dst`.
@@ -95,10 +96,10 @@ def atomic_file_copy(
 
     # Fast exit if dest exists and matches
     if not force and files_match(
-        src, dst,
-        hash_method=hash_method,
-        chunk_size=chunk_size,
-        show_progress=False,   # no need for progress here
+            src, dst,
+            hash_method=hash_method,
+            chunk_size=chunk_size,
+            show_progress=False,  # no need for progress here
     ):
         logger.debug(f"File {dst} already exists and is identical, skipping.")
         return dst
@@ -118,10 +119,10 @@ def atomic_file_copy(
             # Manual chunked copy with progress
             with open(src, "rb") as fsrc, open(tmp_dst, "wb") as fdst:
                 with tqdm(
-                    total=total,
-                    unit="B",
-                    unit_scale=True,
-                    desc=f"Copying {src.name}",
+                        total=total,
+                        unit="B",
+                        unit_scale=True,
+                        desc=f"Copying {src.name}",
                 ) as pbar:
                     for chunk in iter(lambda: fsrc.read(chunk_size), b""):
                         fdst.write(chunk)
@@ -136,10 +137,10 @@ def atomic_file_copy(
 
         # Verify the temp file, NOT dst
         if not files_match(
-            src, tmp_dst,
-            hash_method=hash_method,
-            chunk_size=chunk_size,
-            show_progress=False,
+                src, tmp_dst,
+                hash_method=hash_method,
+                chunk_size=chunk_size,
+                show_progress=False,
         ):
             logger.error(f"{hash_method} mismatch after copy to temp: {src} -> {tmp_dst}")
             # Clean-up (atomic_output_file will try to remove tmp on exception anyway)
@@ -151,3 +152,33 @@ def atomic_file_copy(
     logger.debug(f"Final file size after replace: {final_size}")
 
     return dst
+
+
+def check_valid_parquet(path: Union[str, Path]) -> bool:
+    """
+    Return ``True`` if the given path points to a readable Parquet file.
+
+    Validation is based on file content via PyArrow rather than filename
+    extension, so files with non-standard suffixes are accepted as long as
+    their contents are valid Parquet.
+
+    Parameters
+    ----------
+    path : str | Path
+        Path to the file to validate.
+
+    Returns
+    -------
+    bool
+        ``True`` if the file can be opened as a Parquet file, otherwise ``False``.
+    """
+    candidate = Path(path)
+
+    if not candidate.is_file():
+        return False
+
+    try:
+        pq.ParquetFile(str(candidate))
+        return True
+    except Exception:
+        return False

@@ -123,3 +123,55 @@ concat_parquet_files(files=input_files, output_path=output_wide.with_suffix('.by
 filtered_wide_function_result = pd.read_parquet(output_wide.with_suffix('.by_function.parquet')).set_index(
     index_cols)
 filtered_wide_function_result
+
+# %%
+# Wide Concatenation from an In-Memory DataFrame
+# ----------------------------------------------
+#
+# Sometimes the extra columns you want to add are already in memory as a
+# :class:`pandas.DataFrame`. In that case, you can skip writing the DataFrame
+# to a temporary Parquet file and merge it directly into an existing Parquet
+# file in chunks.
+#
+# The helper :func:`parq_tools.parq_concat.concat_parquet_file_with_dataframe`
+# rewrites the source file by streaming it batch-by-batch and appending the
+# additional columns using ``index_columns`` for alignment.
+#
+# This is especially useful when you want to:
+#
+# - avoid an extra temporary Parquet file
+# - keep memory usage bounded
+# - rewrite the original file in place
+# - work with valid Parquet files that do not use the ``.parquet`` extension
+#
+# %%
+from parq_tools.parq_concat import concat_parquet_file_with_dataframe
+#
+# Create a small DataFrame with extra columns keyed by the same index columns.
+extra_df = pd.DataFrame(
+    {
+        "x": [1, 2, 3],
+        "y": [4, 5, 6],
+        "z": [7, 8, 9],
+        "h": ["left", "middle", "right"],
+    }
+)
+#
+# Rewrite one of the example parquet files in place.
+# The helper validates the file by content, so a non-standard suffix like
+# ``.pbm`` is also acceptable if the file really contains Parquet data.
+example_copy = temp_dir / "example_data1.pbm"
+example_copy.write_bytes(input_files[0].read_bytes())
+#
+concat_parquet_file_with_dataframe(
+    parquet_path=example_copy,
+    df=extra_df,
+    output_path=example_copy,
+    index_columns=["x", "y", "z"],
+    allow_overwrite=True,
+    batch_size=5,
+)
+#
+# Read the rewritten file back and compare the appended columns.
+wide_from_df = pd.read_parquet(example_copy).set_index(index_cols)
+wide_from_df

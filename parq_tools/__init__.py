@@ -3,7 +3,7 @@ import os
 os.environ["YDATA_SUPPRESS_BANNER"] = "1"
 
 from importlib import metadata
-from .parq_concat import ParquetConcat, concat_parquet_files
+from .parq_concat import ParquetConcat, concat_parquet_files, concat_parquet_file_with_dataframe
 from .parq_filter import filter_parquet_file
 from .parq_schema_tools import rename_and_update_metadata
 from .parq_profile import ParquetProfileReport
