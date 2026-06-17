@@ -45,6 +45,36 @@ def test_basic_column_loading(tmp_path: Path) -> None:
     assert list(s) == [1.0, 2.0, 3.0, 4.0]
 
 
+def test_getitem_single_column_returns_series(tmp_path: Path) -> None:
+    path = make_parquet(tmp_path)
+    lp = LazyParquetDF(path)
+    s = lp["i"]
+    assert isinstance(s, pd.Series)
+    assert s.name == "i"
+
+
+def test_getitem_multi_column_returns_dataframe(tmp_path: Path) -> None:
+    path = make_parquet(tmp_path)
+    lp = LazyParquetDF(path)
+    df = lp[["i", "j"]]
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["i", "j"]
+
+
+def test_getitem_multi_column_missing_raises_keyerror(tmp_path: Path) -> None:
+    path = make_parquet(tmp_path)
+    lp = LazyParquetDF(path)
+    with pytest.raises(KeyError):
+        _ = lp[["col1", "does_not_exist"]]
+
+
+def test_getitem_bad_key_type_raises_typeerror(tmp_path: Path) -> None:
+    path = make_parquet(tmp_path)
+    lp = LazyParquetDF(path)
+    with pytest.raises(TypeError):
+        _ = lp[123]
+
+
 def test_index_from_pandas_metadata(tmp_path: Path) -> None:
     path = make_parquet_with_index(tmp_path)
     lp = LazyParquetDF(path)

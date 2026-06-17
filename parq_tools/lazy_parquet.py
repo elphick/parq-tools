@@ -184,14 +184,40 @@ class LazyParquetDF:
     # Column access and loading
     # ------------------------------------------------------------------ #
 
-    def __getitem__(self, key: str) -> pd.Series:
-        """Return a column as a pandas Series, loading it lazily if needed."""
+    def __getitem__(self, key: str | Sequence[str]) -> pd.Series | pd.DataFrame:
+        """Return one column (Series) or multiple columns (DataFrame), loading lazily."""
 
-        if key not in self._column_order:
-            raise KeyError(f"Column {key!r} not found in lazy frame.")
-        if key in self._available_columns and key not in self._df.columns:
-            self._ensure_columns_loaded([key])
-        return self._df[key]
+        # Single-column path (existing behavior)
+        if isinstance(key, str):
+            if key not in self._column_order:
+                raise KeyError(f"Column {key!r} not found in lazy frame.")
+            if key in self._available_columns and key not in self._df.columns:
+                self._ensure_columns_loaded([key])
+            return self._df[key]
+
+        # Multi-column path
+        if isinstance(key, (list, tuple)):
+            if not all(isinstance(c, str) for c in key):
+                raise TypeError("All column keys must be strings.")
+            cols = list(key)
+
+            missing = [c for c in cols if c not in self._column_order]
+            if missing:
+                raise KeyError(f"Columns not found in lazy frame: {missing}")
+
+            to_load = [
+                c for c in cols
+                if c in self._available_columns and c not in self._df.columns
+            ]
+            if to_load:
+                self._ensure_columns_loaded(to_load)
+
+            return self._df[cols]
+
+        raise TypeError(
+            "Invalid key type for LazyParquetDF.__getitem__; "
+            "expected str or list/tuple of str."
+        )
 
     def __setitem__(self, key: str, value: object) -> None:
         """Add or overwrite a column.
