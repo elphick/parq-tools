@@ -11,15 +11,18 @@ Main APIs:
 - ParquetConcat: Class for advanced concatenation workflows, supporting batch processing, index alignment,
   and metadata handling.
 """
-
+import gc
 import json
 import logging
 from pathlib import Path
 
 import pyarrow.parquet as pq
 import pyarrow as pa
+import pandas as pd
 import pyarrow.dataset as ds
-from typing import List, Optional
+from typing import List, Optional, Sequence
+
+from parq_tools.utils.file_utils import check_valid_parquet
 
 from parq_tools.utils import atomic_output_file, get_pandas_metadata, merge_pandas_metadata
 from parq_tools.utils.index_utils import validate_index_alignment
@@ -64,6 +67,154 @@ def concat_parquet_files(files: List[Path],
     concat = ParquetConcat(files, axis, index_columns, show_progress)
     concat.concat_to_file(output_path, filter_query, columns, batch_size, show_progress)
 
+
+def concat_parquet_file_with_dataframe(
+    parquet_path: Path,
+    df: pd.DataFrame,
+    output_path: Optional[Path] = None,
+    *,
+    index_columns: List[str],
+    batch_size: int = 100_000,
+    allow_overwrite: bool = False,
+    show_progress: bool = False,
+    **pq_write_kwargs: object,
+) -> None:
+    """
+    Rewrite a Parquet file by appending columns from an in-memory DataFrame.
+
+    The source Parquet file is streamed in row batches, aligned against the
+    provided DataFrame using ``index_columns``, and written to a new Parquet
+    file. This avoids materializing the DataFrame to disk first.
+
+    Validation is content-based, so Parquet files with non-standard extensions
+    (for example ``.pbm``) are accepted if they are valid Parquet files.
+
+    Parameters
+    ----------
+    parquet_path:
+        Path to the source Parquet file.
+    df:
+        In-memory DataFrame containing the extra columns to append.
+    output_path:
+        Destination path for the rewritten Parquet file. If omitted, the source
+        file is rewritten in place.
+    index_columns:
+        Column names used to align rows between the source file and ``df``.
+    batch_size:
+        Number of source rows to process per batch.
+    allow_overwrite:
+        If ``True``, allow replacing an existing output file, including the
+        source file when rewriting in place.
+    show_progress:
+        If ``True``, display a progress bar if ``tqdm`` is available.
+    **pq_write_kwargs:
+        Extra keyword arguments forwarded to ``pyarrow.parquet.ParquetWriter``.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the source file does not exist.
+    ValueError
+        If the file is not valid Parquet, batch_size is invalid, or key columns
+        are duplicated/misaligned.
+    FileExistsError
+        If the target exists and overwrite is not allowed.
+    KeyError
+        If required index columns are missing from either input.
+    """
+    source_path = Path(parquet_path)
+    target_path = Path(output_path) if output_path is not None else source_path
+
+    if batch_size <= 0:
+        raise ValueError("batch_size must be positive")
+    if not index_columns:
+        raise ValueError("index_columns must contain at least one column name")
+    if not source_path.exists():
+        raise FileNotFoundError(f"Source file not found: {source_path}")
+    if not check_valid_parquet(source_path):
+        raise ValueError(f"Source file is not a valid Parquet file: {source_path}")
+
+    if target_path.exists() and not allow_overwrite:
+        raise FileExistsError(f"Target file already exists: {target_path}")
+
+    source_pf = pq.ParquetFile(str(source_path))
+    source_columns = source_pf.schema_arrow.names
+
+    missing_source_index = [col for col in index_columns if col not in source_columns]
+    if missing_source_index:
+        raise KeyError(
+            f"Index columns missing from source parquet file: {missing_source_index}"
+        )
+
+    missing_df_index = [col for col in index_columns if col not in df.columns]
+    if missing_df_index:
+        raise KeyError(
+            f"Index columns missing from input DataFrame: {missing_df_index}"
+        )
+
+    df_extra_columns = [col for col in df.columns if col not in index_columns]
+    duplicate_non_index_columns = [col for col in df_extra_columns if col in source_columns]
+    if duplicate_non_index_columns:
+        raise ValueError(
+            "Input DataFrame contains columns already present in the source parquet "
+            f"file: {duplicate_non_index_columns}"
+        )
+
+    if df.duplicated(list(index_columns)).any():
+        raise ValueError(
+            "Input DataFrame contains duplicate keys for index_columns; wide "
+            "concatenation requires unique key rows."
+        )
+
+    df_indexed = df.set_index(list(index_columns), drop=False)
+
+    progress_bar = None
+    if show_progress:
+        try:
+            from tqdm import tqdm
+
+            progress_bar = tqdm(
+                total=source_pf.metadata.num_rows,
+                desc="Concatenating columns",
+                unit="row",
+            )
+        except ImportError:
+            progress_bar = None
+
+    try:
+        with atomic_output_file(target_path) as tmp_file:
+            writer: Optional[pq.ParquetWriter] = None
+            writer_schema: Optional[pa.Schema] = None
+            try:
+                for batch in source_pf.iter_batches(batch_size=batch_size):
+                    source_chunk = batch.to_pandas()
+                    chunk_indexed = source_chunk.set_index(list(index_columns), drop=False)
+
+                    merged_chunk = chunk_indexed.join(
+                        df_indexed[df_extra_columns],
+                        how="left",
+                    ).reset_index(drop=True)
+
+                    table = pa.Table.from_pandas(merged_chunk, preserve_index=False)
+
+                    if writer is None:
+                        writer_schema = table.schema
+                        writer = pq.ParquetWriter(tmp_file, writer_schema, **pq_write_kwargs)
+                    else:
+                        table = table.cast(writer_schema, safe=False)
+
+                    writer.write_table(table)
+
+                    if progress_bar is not None:
+                        progress_bar.update(len(source_chunk))
+            finally:
+                if writer is not None:
+                    writer.close()
+                source_pf = None
+                gc.collect()
+    finally:
+        if progress_bar is not None:
+            progress_bar.close()
 
 class ParquetConcat:
     """
