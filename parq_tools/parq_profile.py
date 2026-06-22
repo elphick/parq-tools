@@ -112,7 +112,7 @@ class ParquetProfileReport:
             df = pd.read_parquet(self.parquet_path, columns=self.columns)
             self.report = ProfileReport(df, minimal=True, explorative=False, progress_bar=False,
                                         title=self.title, dataset=self.dataset_metadata.to_dict(),
-                                        variables=self.column_descriptions)
+                                        variables={"descriptions": self.column_descriptions})
         else:
             # Columnar profiling
             gen = parquet_column_generator(self.parquet_path, columns=self.columns)

@@ -47,6 +47,7 @@ report = ParquetProfileReport(
     columns=None,  # None means all columns
     batch_size=1,  # Process 1 column at a time
     show_progress=True,
+    column_descriptions={"col1": "Column 1", "col2": "Column 2"},
 )
 report.profile()
 
@@ -61,5 +62,6 @@ report = ParquetProfileReport(
     parquet_path=parquet_path,
     batch_size=None,  # None batch size will run standard ydata-profiling ProfileReport
     show_progress=True,
+    column_descriptions={"col1": "Column 1", "col2": "Column 2"},
 )
 report.profile().show()
