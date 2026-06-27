@@ -1,10 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Any, Iterator, Mapping, Optional, Union
 import pandas as pd
-import os
-
-from matplotlib.pyplot import title
 from parq_tools.utils import atomic_output_file
 from parq_tools.utils.optional_imports import get_tqdm, get_ydata_profile_report
 
@@ -53,6 +50,76 @@ class ProfileMetadata:
         return f"ProfileMetadata(description={self.description}, creator={self.creator}, " \
                f"author={self.author}, url={self.url}, copyright_year={self.copyright_year}, " \
                f"copyright_holder={self.copyright_holder})"
+
+
+@dataclass
+class ColumnMetadata:
+    """Structured metadata used to render profile column descriptions."""
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    units: Optional[str] = None
+    source: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "ColumnMetadata":
+        """Create ColumnMetadata from supported metadata keys."""
+        return cls(
+            title=data.get("title"),
+            description=data.get("description"),
+            units=data.get("units") or data.get("unit_of_measure"),
+            source=data.get("source"),
+        )
+
+    @classmethod
+    def from_value(cls, value: Union[str, Mapping[str, Any], "ColumnMetadata"]) -> "ColumnMetadata":
+        """Normalize a supported column metadata payload into ColumnMetadata."""
+        if isinstance(value, cls):
+            return value
+        if isinstance(value, str):
+            return cls(description=value)
+        if isinstance(value, Mapping):
+            return cls.from_dict(value)
+        raise TypeError(
+            "Column metadata values must be str, mapping, or ColumnMetadata."
+        )
+
+    def to_description_string(self, default_title: Optional[str] = None) -> str:
+        """Render metadata into a single profile description string."""
+        title = self.title or default_title
+        description = self.description or ""
+        if title and description:
+            base = f"{title}: {description}"
+        elif description:
+            base = description
+        else:
+            base = title or ""
+
+        extras = []
+        if self.units:
+            extras.append(f"Units: {self.units}")
+        if self.source:
+            extras.append(f"Source: {self.source}")
+
+        if extras:
+            if base:
+                return f"{base} ({'; '.join(extras)})"
+            return "; ".join(extras)
+        return base
+
+
+def build_column_descriptions(
+    column_metadata: Optional[Mapping[str, Union[str, Mapping[str, Any], ColumnMetadata]]]
+) -> dict[str, str]:
+    """Normalize structured column metadata into ydata-compatible description strings."""
+    if not column_metadata:
+        return {}
+
+    descriptions: dict[str, str] = {}
+    for column_name, metadata in column_metadata.items():
+        normalized = ColumnMetadata.from_value(metadata)
+        descriptions[column_name] = normalized.to_description_string()
+    return descriptions
 
 
 class ColumnarProfileReport:

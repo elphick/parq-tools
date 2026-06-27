@@ -10,14 +10,19 @@ Main API:
 import contextlib
 from io import StringIO
 from pathlib import Path
-from typing import Iterator, Optional, List, Union
+from typing import Any, Iterator, Optional, List, Mapping, Union
 import pandas as pd
 import pyarrow.parquet as pq
 
 
 from parq_tools.utils import atomic_output_file
 from parq_tools.utils.metadata_utils import get_table_metadata, get_column_metadata, get_pandas_metadata
-from parq_tools.utils.profile_utils import ColumnarProfileReport, ProfileMetadata
+from parq_tools.utils.profile_utils import (
+    ColumnarProfileReport,
+    ProfileMetadata,
+    ColumnMetadata,
+    build_column_descriptions,
+)
 from parq_tools.utils.optional_imports import get_ydata_profile_report
 
 
@@ -65,7 +70,9 @@ class ParquetProfileReport:
                  show_progress: bool = True,
                  title: str = "Parquet Profile Report",
                  dataset_metadata: Optional[Union[dict, ProfileMetadata]] = None,
-                 column_descriptions: Optional[dict[str, str]] = None) -> None:
+                 column_descriptions: Optional[
+                     dict[str, Union[str, Mapping[str, Any], ColumnMetadata]]
+                 ] = None) -> None:
         """
         Initialize the ParquetProfileReport.
 
@@ -78,8 +85,9 @@ class ParquetProfileReport:
             title: Title of the report.
             dataset_metadata: Optional[Union[dict, ProfileMetadata]]: Metadata for the dataset.  Will over-ride any
                 metadata in the Parquet file.
-            column_descriptions: Optional[dict[str, str]]: Column descriptions for the dataset.  Will over-ride any
-                descriptions in the Parquet file.
+            column_descriptions: Optional[dict[str, Union[str, Mapping[str, Any], ColumnMetadata]]]:
+                Column metadata/description values for the dataset. Supports legacy strings and structured
+                metadata payloads. Will over-ride any descriptions in the Parquet file.
         """
         self.parquet_path = parquet_path
         self.batch_size = batch_size
@@ -90,19 +98,23 @@ class ParquetProfileReport:
         metadata = dataset_metadata if isinstance(dataset_metadata, ProfileMetadata) else ProfileMetadata.from_dict(
             dataset_metadata) if dataset_metadata else None
         self.dataset_metadata = metadata
-        self.column_descriptions = column_descriptions
-
         pq_file = pq.ParquetFile(str(self.parquet_path))
         self.columns = pq_file.schema.names if columns is None else columns
         if not self.dataset_metadata:
             # If no metadata is provided, use the Parquet file metadata
             table_meta: dict = get_table_metadata(pq_file)
             self.dataset_metadata = ProfileMetadata.from_dict(table_meta) if pq_file.metadata else None
-        if self.column_descriptions is None:
+        if column_descriptions is None:
             # If no column descriptions are provided, use the Parquet file metadata
-            column_descriptions = get_column_metadata(pq_file)
-            column_descriptions = {col: desc.get("description", "") for col, desc in column_descriptions.items() if col in self.columns}
-            self.column_descriptions = column_descriptions
+            column_descriptions = {
+                col: desc for col, desc in get_column_metadata(pq_file).items() if col in self.columns
+            }
+        else:
+            column_descriptions = {
+                col: desc for col, desc in column_descriptions.items() if col in self.columns
+            }
+
+        self.column_descriptions = build_column_descriptions(column_descriptions)
 
     def profile(self) -> 'ParquetProfileReport':
         """Profiles the Parquet file."""
@@ -110,8 +122,9 @@ class ParquetProfileReport:
             # Native ydata profiling (no chunking)
             ProfileReport = get_ydata_profile_report("ParquetProfileReport.profile()")
             df = pd.read_parquet(self.parquet_path, columns=self.columns)
+            dataset_config = self.dataset_metadata.to_dict() if self.dataset_metadata else {}
             self.report = ProfileReport(df, minimal=True, explorative=False, progress_bar=False,
-                                        title=self.title, dataset=self.dataset_metadata.to_dict(),
+                                        title=self.title, dataset=dataset_config,
                                         variables={"descriptions": self.column_descriptions})
         else:
             # Columnar profiling
