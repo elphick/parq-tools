@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 from pathlib import Path
 
-from parq_tools import rename_and_update_metadata
+from parq_tools import rename_and_update_metadata, ColumnMetadata
 from parq_tools.parq_profile import ParquetProfileReport
 import webbrowser
 
@@ -116,6 +116,57 @@ def test_parquet_profile_report_metadata_from_file(temp_parquet_file):
     # Check if metadata is included in the report
     assert profiler.report.config.dataset.description == "Test dataset with persisted metadata"
     assert profiler.report.config.variables.descriptions['col1'] == "Column 1 description from file"
+
+
+def test_parquet_profile_report_structured_column_metadata_from_file(temp_parquet_file):
+    rename_and_update_metadata(
+        input_path=temp_parquet_file,
+        output_path=temp_parquet_file,
+        table_metadata={"description": "Test dataset with persisted metadata"},
+        column_metadata={
+            "col1": {
+                "title": "Mass",
+                "description": "Measured sample mass",
+                "unit_of_measure": "kg",
+                "source": "lab",
+            }
+        },
+        show_progress=False,
+    )
+    profiler = ParquetProfileReport(
+        parquet_path=temp_parquet_file,
+        batch_size=1,
+        show_progress=False,
+    )
+
+    assert profiler.column_descriptions["col1"] == "Mass: Measured sample mass (Units: kg; Source: lab)"
+
+
+def test_parquet_profile_report_structured_column_metadata_input(temp_parquet_file):
+    profiler = ParquetProfileReport(
+        parquet_path=temp_parquet_file,
+        batch_size=1,
+        show_progress=False,
+        column_descriptions={
+            "col1": ColumnMetadata(
+                title="Volume",
+                description="Measured fluid volume",
+                units="m3",
+                source="model",
+            ),
+            "col2": {
+                "title": "Label",
+                "description": "Classification label",
+                "units": "category",
+                "source": "manual",
+            },
+            "col3": "Legacy description",
+        },
+    )
+
+    assert profiler.column_descriptions["col1"] == "Volume: Measured fluid volume (Units: m3; Source: model)"
+    assert profiler.column_descriptions["col2"] == "Label: Classification label (Units: category; Source: manual)"
+    assert profiler.column_descriptions["col3"] == "Legacy description"
 
 
 def test_parquet_profile_report_show(temp_parquet_file):

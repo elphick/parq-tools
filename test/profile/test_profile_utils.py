@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 from pathlib import Path
-from parq_tools.utils.profile_utils import ColumnarProfileReport
+from parq_tools.utils.profile_utils import ColumnarProfileReport, ColumnMetadata, build_column_descriptions
 import types
 
 class DummyProfile:
@@ -11,6 +11,39 @@ class DummyProfile:
     def to_notebook_iframe(self):
         # Minimal stub for notebook display; real implementation would display in Jupyter.
         return "<iframe>dummy</iframe>"
+
+
+def test_column_metadata_formats_title_description_units_source():
+    metadata = ColumnMetadata(
+        title="Mass",
+        description="Measured sample mass",
+        units="kg",
+        source="lab",
+    )
+    assert metadata.to_description_string() == "Mass: Measured sample mass (Units: kg; Source: lab)"
+
+
+def test_build_column_descriptions_supports_legacy_and_structured_values():
+    descriptions = build_column_descriptions(
+        {
+            "legacy": "Simple description",
+            "dict_payload": {
+                "title": "Density",
+                "description": "Bulk density",
+                "unit_of_measure": "kg/m3",
+                "source": "calculated",
+            },
+            "dataclass_payload": ColumnMetadata(
+                title="Volume",
+                description="Volume estimate",
+                units="m3",
+                source="sensor",
+            ),
+        }
+    )
+    assert descriptions["legacy"] == "Simple description"
+    assert descriptions["dict_payload"] == "Density: Bulk density (Units: kg/m3; Source: calculated)"
+    assert descriptions["dataclass_payload"] == "Volume: Volume estimate (Units: m3; Source: sensor)"
 
 def test_to_html_raises_if_no_report():
     report = ColumnarProfileReport(iter([]))
@@ -83,4 +116,3 @@ def test_profile_batches(monkeypatch):
     report.profile()
     assert report.report is not None
     assert hasattr(report.report, 'to_html')
-
