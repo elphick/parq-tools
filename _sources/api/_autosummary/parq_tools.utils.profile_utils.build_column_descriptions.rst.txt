@@ -1,0 +1,6 @@
+parq\_tools.utils.profile\_utils.build\_column\_descriptions
+============================================================
+
+.. currentmodule:: parq_tools.utils.profile_utils
+
+.. autofunction:: build_column_descriptions

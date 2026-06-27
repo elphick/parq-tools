@@ -1,0 +1,6 @@
+parq\_tools.utils.metadata\_utils.get\_pandas\_metadata
+=======================================================
+
+.. currentmodule:: parq_tools.utils.metadata_utils
+
+.. autofunction:: get_pandas_metadata

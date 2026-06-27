@@ -1,0 +1,31 @@
+﻿parq\_tools.parq\_filter
+========================
+
+.. automodule:: parq_tools.parq_filter
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      filter_parquet_file
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

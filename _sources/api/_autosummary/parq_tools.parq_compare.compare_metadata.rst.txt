@@ -1,0 +1,6 @@
+parq\_tools.parq\_compare.compare\_metadata
+===========================================
+
+.. currentmodule:: parq_tools.parq_compare
+
+.. autofunction:: compare_metadata

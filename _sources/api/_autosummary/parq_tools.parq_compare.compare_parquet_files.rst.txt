@@ -1,0 +1,6 @@
+parq\_tools.parq\_compare.compare\_parquet\_files
+=================================================
+
+.. currentmodule:: parq_tools.parq_compare
+
+.. autofunction:: compare_parquet_files

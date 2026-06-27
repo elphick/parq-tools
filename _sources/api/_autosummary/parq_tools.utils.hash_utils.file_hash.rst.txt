@@ -1,0 +1,6 @@
+parq\_tools.utils.hash\_utils.file\_hash
+========================================
+
+.. currentmodule:: parq_tools.utils.hash_utils
+
+.. autofunction:: file_hash

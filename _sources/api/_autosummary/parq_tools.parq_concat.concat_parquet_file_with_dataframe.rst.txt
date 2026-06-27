@@ -1,0 +1,6 @@
+parq\_tools.parq\_concat.concat\_parquet\_file\_with\_dataframe
+===============================================================
+
+.. currentmodule:: parq_tools.parq_concat
+
+.. autofunction:: concat_parquet_file_with_dataframe

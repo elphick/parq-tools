@@ -1,0 +1,6 @@
+parq\_tools.utils.archive\_utils.extract\_archive\_with\_7zip
+=============================================================
+
+.. currentmodule:: parq_tools.utils.archive_utils
+
+.. autofunction:: extract_archive_with_7zip

@@ -1,0 +1,6 @@
+parq\_tools.utils.index\_utils.reindex\_parquet
+===============================================
+
+.. currentmodule:: parq_tools.utils.index_utils
+
+.. autofunction:: reindex_parquet

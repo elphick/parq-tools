@@ -1,0 +1,6 @@
+parq\_tools.utils.hash\_utils.files\_match
+==========================================
+
+.. currentmodule:: parq_tools.utils.hash_utils
+
+.. autofunction:: files_match

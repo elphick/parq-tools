@@ -1,0 +1,6 @@
+parq\_tools.utils.demo\_block\_model.create\_demo\_blockmodel
+=============================================================
+
+.. currentmodule:: parq_tools.utils.demo_block_model
+
+.. autofunction:: create_demo_blockmodel
