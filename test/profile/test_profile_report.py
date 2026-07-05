@@ -4,8 +4,6 @@ from pathlib import Path
 
 from parq_tools import rename_and_update_metadata, ColumnMetadata
 from parq_tools.parq_profile import ParquetProfileReport
-import webbrowser
-
 
 @pytest.fixture
 def temp_parquet_file(tmp_path: Path):
@@ -26,10 +24,9 @@ def temp_output_file(tmp_path):
     """Fixture to create a temporary output HTML file."""
     return tmp_path / "report.html"
 
-
 @pytest.mark.parametrize("open_report", [True])
 def test_native_profile_report(temp_parquet_file, temp_output_file, open_report):
-    from ydata_profiling import ProfileReport
+    from data_profiling import ProfileReport
     df = pd.read_parquet(temp_parquet_file)
     report = ProfileReport(df, title="Parquet Profile Report", explorative=True, minimal=True)
     print(dir(report))
@@ -77,7 +74,6 @@ def test_parquet_profile_report(temp_parquet_file, temp_output_file, open_report
 
 
 def test_parquet_profile_report_supplied_metadata(temp_parquet_file):
-    from ydata_profiling import ProfileReport
     metadata = {
         "description": "This is a test dataset",
         "version": "1.0.0",  # not a supported key in ydata_profiling
@@ -98,7 +94,6 @@ def test_parquet_profile_report_supplied_metadata(temp_parquet_file):
 
 
 def test_parquet_profile_report_metadata_from_file(temp_parquet_file):
-    from ydata_profiling import ProfileReport
     # Create a Parquet file with metadata
     rename_and_update_metadata(
         input_path=temp_parquet_file,

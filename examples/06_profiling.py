@@ -2,7 +2,7 @@
 Parquet Profiling
 =================
 
-`ydata-profiling` provides a convenient way to profile Parquet files using the `ProfileReport` class.
+`fg-data-profiling` (formerly ydata-profiling) provides a convenient way to profile Parquet files using the `ProfileReport` class.
 Their documentation provides options for profiling large datasets.  This example describes an alternative approach.
 
 In cases where a parquet may be very wide, and you want to profile it column by column, you can use the
@@ -62,13 +62,13 @@ report.profile()
 report.show()
 
 # %%
-# Run native ydata-profiling
+# Run native fg-data-profiling
 # --------------------------
 # As expected the native report runs faster, and only requires 3 steps.
 
 report = ParquetProfileReport(
     parquet_path=parquet_path,
-    batch_size=None,  # None batch size will run standard ydata-profiling ProfileReport
+    batch_size=None,  # None batch size will run standard fg-data-profiling ProfileReport
     show_progress=True,
     column_descriptions={
         "col1": {

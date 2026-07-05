@@ -8,16 +8,16 @@ def get_tqdm():
         return dummy
 
 
-def get_ydata_profile_report(feature: str = "profiling"):
-    """Lazily import and return ydata_profiling.ProfileReport.
+def get_data_profile_report(feature: str = "profiling"):
+    """Lazily import and return data_profiling.ProfileReport.
 
-    Raises a user-friendly ImportError if ydata_profiling is not installed.
+    Raises a user-friendly ImportError if data_profiling is not installed.
     """
     try:
-        from ydata_profiling import ProfileReport  # type: ignore[import]
+        from data_profiling import ProfileReport  # type: ignore[import]
     except ImportError as exc:  # pragma: no cover - message checked in tests
         raise ImportError(
-            "ydata_profiling is required for profiling features in parq_tools. "
-            f"Install it with 'pip install ydata-profiling' to use {feature}."
+            "data_profiling is required for profiling features in parq_tools. "
+            f"Install it with 'pip install fg-data-profiling' to use {feature}."
         ) from exc
     return ProfileReport
