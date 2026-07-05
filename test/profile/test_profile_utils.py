@@ -109,7 +109,7 @@ def test_profile_batches(monkeypatch):
 
     # Patch the optional import helper so that profile() uses our dummy
     monkeypatch.setattr(
-        "parq_tools.utils.optional_imports.get_ydata_profile_report",
+        "parq_tools.utils.optional_imports.get_data_profile_report",
         lambda feature="profiling": dummy_profile_report,
     )
     report = ColumnarProfileReport(iter(cols), column_count=3, batch_size=2, show_progress=False)

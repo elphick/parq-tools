@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Iterator, Mapping, Optional, Union
 import pandas as pd
 from parq_tools.utils import atomic_output_file
-from parq_tools.utils.optional_imports import get_tqdm, get_ydata_profile_report
+from parq_tools.utils.optional_imports import get_tqdm, get_data_profile_report
 
 
 @dataclass
@@ -123,7 +123,7 @@ def build_column_descriptions(
 
 
 class ColumnarProfileReport:
-    """Memory-efficient, column-wise profiler for large datasets using ydata-profiling.
+    """Memory-efficient, column-wise profiler for large datasets using fg-data-profiling.
 
     This class can be leveraged by any file reader that can yield pandas Series.
     """
@@ -166,7 +166,7 @@ class ColumnarProfileReport:
 
     def profile(self) -> None:
         # Import ProfileReport lazily so module import does not require ydata_profiling
-        ProfileReport = get_ydata_profile_report("ColumnarProfileReport.profile()")
+        ProfileReport = get_data_profile_report("ColumnarProfileReport.profile()")
         col_names = []
         descriptions = []
         head_chunks: list[pd.DataFrame] = []
@@ -284,22 +284,22 @@ class ColumnarProfileReport:
 
 
 class BatchDescription:
-    """A class to patch ydata-profiling progressbar bug
+    """A class to patch fg-data-profiling progressbar bug
 
-    As at ydata-profiling=4.16.1 there is a bug with the progress bar that does not respect the
+    As at fg-data-profiling=4.16.1 there is a bug with the progress bar that does not respect the
     `progress_bar` parameter in the `ProfileReport` constructor. This class is used to create a
     description of a batch of columns, mimicking the behavior of `ydata_profiling.model.pandas.describe_1d`
 
-    TODO: report the ydata-profiling unmanaged progressbar bug for an upstream fix
+    TODO: report the fg-data-profiling unmanaged progressbar bug for an upstream fix
 
     """
 
     def __init__(self, config, df, summarizer, typeset):
         # Import heavy ydata_profiling pieces lazily
-        ProfileReport = get_ydata_profile_report("BatchDescription")
-        from ydata_profiling.model.pandas.summary_pandas import pandas_describe_1d
-        from ydata_profiling.model.table import get_table_stats
-        from ydata_profiling.model.alerts import get_alerts
+        ProfileReport = get_data_profile_report("BatchDescription")
+        from data_profiling.model.pandas.summary_pandas import pandas_describe_1d
+        from data_profiling.model.table import get_table_stats
+        from data_profiling.model.alerts import get_alerts
 
         self.variables = {
             name: pandas_describe_1d(config, series, summarizer, typeset)

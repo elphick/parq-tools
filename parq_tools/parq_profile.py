@@ -1,7 +1,7 @@
 """
 parq_profile.py
 
-Utilities for profiling Parquet files and generating HTML reports using ydata-profiling, with support for notebook and browser display.
+Utilities for profiling Parquet files and generating HTML reports using fg-data-profiling, with support for notebook and browser display.
 
 Main API:
 
@@ -23,7 +23,7 @@ from parq_tools.utils.profile_utils import (
     ColumnMetadata,
     build_column_descriptions,
 )
-from parq_tools.utils.optional_imports import get_ydata_profile_report
+from parq_tools.utils.optional_imports import get_data_profile_report
 
 
 def parquet_column_generator(parquet_path: Union[str, Path],
@@ -120,7 +120,7 @@ class ParquetProfileReport:
         """Profiles the Parquet file."""
         if self.batch_size is None:
             # Native ydata profiling (no chunking)
-            ProfileReport = get_ydata_profile_report("ParquetProfileReport.profile()")
+            ProfileReport = get_data_profile_report("ParquetProfileReport.profile()")
             df = pd.read_parquet(self.parquet_path, columns=self.columns)
             dataset_config = self.dataset_metadata.to_dict() if self.dataset_metadata else {}
             self.report = ProfileReport(df, minimal=True, explorative=False, progress_bar=False,
