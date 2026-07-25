@@ -73,6 +73,17 @@ def test_parquet_profile_report(temp_parquet_file, temp_output_file, open_report
             mock_open.assert_called_once_with(f"file://{temp_output_file}")
 
 
+def test_parquet_profile_report_to_file(temp_parquet_file, tmp_path: Path):
+    output_file = tmp_path / "profile_to_file.html"
+    profiler = ParquetProfileReport(
+        parquet_path=temp_parquet_file,
+        batch_size=1,
+        show_progress=False,
+    )
+    profiler.profile().to_file(output_file)
+    assert output_file.exists(), "HTML report was not created via to_file."
+
+
 def test_parquet_profile_report_supplied_metadata(temp_parquet_file):
     metadata = {
         "description": "This is a test dataset",

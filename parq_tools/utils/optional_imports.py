@@ -21,3 +21,15 @@ def get_data_profile_report(feature: str = "profiling"):
             f"Install it with 'pip install fg-data-profiling' to use {feature}."
         ) from exc
     return ProfileReport
+
+
+def get_data_profile_compare(feature: str = "profile comparison"):
+    """Lazily import and return data_profiling.compare_reports.compare."""
+    try:
+        from data_profiling.compare_reports import compare  # type: ignore[import]
+    except ImportError as exc:  # pragma: no cover - message checked in tests
+        raise ImportError(
+            "data_profiling is required for profiling features in parq_tools. "
+            f"Install it with 'pip install fg-data-profiling' to use {feature}."
+        ) from exc
+    return compare

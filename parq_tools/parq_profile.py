@@ -23,7 +23,7 @@ from parq_tools.utils.profile_utils import (
     ColumnMetadata,
     build_column_descriptions,
 )
-from parq_tools.utils.optional_imports import get_data_profile_report
+from parq_tools.utils.optional_imports import get_data_profile_report, get_data_profile_compare
 
 
 def parquet_column_generator(parquet_path: Union[str, Path],
@@ -152,6 +152,10 @@ class ParquetProfileReport:
         with atomic_output_file(output_html) as tmp_path:
             tmp_path.write_text(self.to_html(), encoding="utf-8")
 
+    def to_file(self, output_file: Union[str, Path]) -> None:
+        """Save the profile report to an HTML file (data_profiling-compatible name)."""
+        self.save_html(Path(output_file))
+
     def show(self, notebook: bool = False):
         """Display the profile report in a notebook or open in a browser.
 
@@ -166,3 +170,49 @@ class ParquetProfileReport:
             tmp.write(self.to_html().encode("utf-8"))
             tmp.close()
             webbrowser.open_new_tab(f"file://{tmp.name}")
+
+
+def compare_parquet_profiles(
+    parquet_paths: List[Union[str, Path]],
+    columns: Optional[List[str]] = None,
+    batch_size: Optional[int] = 1,
+    show_progress: bool = True,
+    titles: Optional[List[str]] = None,
+    dataset_metadata: Optional[List[Optional[Union[dict, ProfileMetadata]]]] = None,
+    column_descriptions: Optional[dict[str, Union[str, Mapping[str, Any], ColumnMetadata]]] = None,
+):
+    """Compare 2 or 3 parquet files using profiling reports.
+
+    Uses memory-managed columnar profiling when ``batch_size`` is an integer.
+    """
+    file_count = len(parquet_paths)
+    if file_count not in (2, 3):
+        raise ValueError("parquet_paths must contain exactly 2 or 3 file paths.")
+
+    if titles is not None and len(titles) != file_count:
+        raise ValueError("titles must have the same length as parquet_paths.")
+
+    if dataset_metadata is not None and len(dataset_metadata) != file_count:
+        raise ValueError("dataset_metadata must have the same length as parquet_paths.")
+
+    metadata_list = dataset_metadata if dataset_metadata is not None else [None] * file_count
+    compare_reports = get_data_profile_compare("compare_parquet_profiles()")
+
+    reports = []
+    for idx, parquet_path in enumerate(parquet_paths):
+        report_title = titles[idx] if titles is not None else f"Dataset {chr(65 + idx)}"
+        profiler = ParquetProfileReport(
+            parquet_path=parquet_path,
+            columns=columns,
+            batch_size=batch_size,
+            show_progress=show_progress,
+            title=report_title,
+            dataset_metadata=metadata_list[idx],
+            column_descriptions=column_descriptions,
+        )
+        profiler.profile()
+        if profiler.report is None:
+            raise RuntimeError(f"No report generated for {parquet_path}.")
+        reports.append(profiler.report.get_description())
+
+    return compare_reports(reports)
