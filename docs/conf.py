@@ -13,7 +13,7 @@ import parq_tools
 # -- Project information -----------------------------------------------------
 
 project = 'parq-tools'
-copyright = '2025, Greg Elphick'
+copyright = '2025-2026, Greg Elphick'
 author = 'Greg Elphick'
 version = parq_tools.__version__
 
