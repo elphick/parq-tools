@@ -127,6 +127,7 @@ written = comparison_bundle.write_outputs(
     differences_yaml=temp_dir / "comparison_differences.yaml",
     abs_tol=0.01,
     rel_tol=0.001,
+    description_status_labels="emoji",  # prefixes descriptions with 🟢 SAME | / 🔴 DIFF |
 )
 summary = comparison_bundle.to_summary_dict(abs_tol=0.01, rel_tol=0.001)
 assert summary["columns"]["col4"]["status"] == "equal"

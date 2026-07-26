@@ -10,6 +10,8 @@ Main API:
 import contextlib
 from io import StringIO
 from dataclasses import dataclass
+import copy
+import html as html_lib
 import json
 from pathlib import Path
 from typing import Any, Iterator, Optional, List, Mapping, Union, Iterable
@@ -192,6 +194,76 @@ class ParquetProfileComparisonBundle:
     dataset_descriptions: List[Any]
     labels: List[str]
 
+    @staticmethod
+    def _validate_description_status_labels(description_status_labels: str) -> None:
+        if description_status_labels not in ("none", "emoji"):
+            raise ValueError("description_status_labels must be 'none' or 'emoji'.")
+
+    @staticmethod
+    def _apply_description_status_prefixes(
+        report: Any,
+        summary: dict[str, Any],
+        description_status_labels: str,
+        prefix_same: str,
+        prefix_different: str,
+    ) -> Any:
+        if description_status_labels == "none":
+            return report
+
+        report_copy = copy.deepcopy(report)
+        descriptions = getattr(report_copy.config.variables, "descriptions", None)
+        if not isinstance(descriptions, dict):
+            return report_copy
+
+        report_columns = set(report_copy.get_description().variables.keys())
+        for column_name in report_columns:
+            current_text = descriptions.get(column_name, "")
+            column_summary = summary["columns"].get(column_name, {})
+            status = column_summary.get("status")
+            prefix = prefix_different if status != "equal" else prefix_same
+            if isinstance(current_text, str) and current_text.strip():
+                descriptions[column_name] = f"{prefix}{current_text}"
+            else:
+                descriptions[column_name] = prefix.rstrip().rstrip("|").strip()
+
+        return report_copy
+
+    @staticmethod
+    def _build_tolerance_footer_note(
+        abs_tol: float,
+        rel_tol: float,
+        metrics: Optional[Iterable[str]],
+    ) -> str:
+        metric_list = list(metrics) if metrics is not None else list(DEFAULT_COMPARISON_METRICS)
+        metric_text = ", ".join(metric_list)
+        return (
+            f"Comparison tolerance settings: abs_tol={abs_tol}, rel_tol={rel_tol}, "
+            f"metrics=[{metric_text}]"
+        )
+
+    @staticmethod
+    def _append_footer_note(html: str, note: str) -> str:
+        escaped_note = html_lib.escape(note)
+        footer_block = (
+            "<div style=\"margin:12px 24px 24px 24px;font-size:12px;color:#666;\">"
+            f"{escaped_note}</div>"
+        )
+        if "</body>" in html:
+            return html.replace("</body>", f"{footer_block}</body>", 1)
+        return f"{html}{footer_block}"
+
+    @classmethod
+    def _write_report_html_with_footer(
+        cls,
+        report: Any,
+        output_path: Path,
+        footer_note: str,
+    ) -> None:
+        html = report.to_html()
+        html = cls._append_footer_note(html, footer_note)
+        with atomic_output_file(output_path) as tmp_path:
+            tmp_path.write_text(html, encoding="utf-8")
+
     def to_summary_dict(
         self,
         abs_tol: float = 0.0,
@@ -243,7 +315,11 @@ class ParquetProfileComparisonBundle:
         abs_tol: float = 0.0,
         rel_tol: float = 0.0,
         metrics: Optional[Iterable[str]] = None,
+        description_status_labels: str = "none",
+        prefix_same: str = "🟢 SAME | ",
+        prefix_different: str = "🔴 DIFF | ",
     ):
+        self._validate_description_status_labels(description_status_labels)
         compare_reports = get_data_profile_compare("ParquetProfileComparisonBundle.to_diff_report()")
         summary = self.to_summary_dict(abs_tol=abs_tol, rel_tol=rel_tol, metrics=metrics)
         changed_columns = get_changed_columns_from_summary(summary)
@@ -252,7 +328,33 @@ class ParquetProfileComparisonBundle:
         pruned_descriptions = [
             prune_description_to_columns(desc, changed_columns) for desc in self.dataset_descriptions
         ]
-        return compare_reports(pruned_descriptions)
+        report = compare_reports(pruned_descriptions)
+        return self._apply_description_status_prefixes(
+            report=report,
+            summary=summary,
+            description_status_labels=description_status_labels,
+            prefix_same=prefix_same,
+            prefix_different=prefix_different,
+        )
+
+    def to_comparison_report(
+        self,
+        abs_tol: float = 0.0,
+        rel_tol: float = 0.0,
+        metrics: Optional[Iterable[str]] = None,
+        description_status_labels: str = "none",
+        prefix_same: str = "🟢 SAME | ",
+        prefix_different: str = "🔴 DIFF | ",
+    ):
+        self._validate_description_status_labels(description_status_labels)
+        summary = self.to_summary_dict(abs_tol=abs_tol, rel_tol=rel_tol, metrics=metrics)
+        return self._apply_description_status_prefixes(
+            report=self.comparison_report,
+            summary=summary,
+            description_status_labels=description_status_labels,
+            prefix_same=prefix_same,
+            prefix_different=prefix_different,
+        )
 
     def write_outputs(
         self,
@@ -262,16 +364,40 @@ class ParquetProfileComparisonBundle:
         abs_tol: float = 0.0,
         rel_tol: float = 0.0,
         metrics: Optional[Iterable[str]] = None,
+        description_status_labels: str = "none",
+        prefix_same: str = "🟢 SAME | ",
+        prefix_different: str = "🔴 DIFF | ",
     ) -> dict[str, Path]:
+        self._validate_description_status_labels(description_status_labels)
+        footer_note = self._build_tolerance_footer_note(
+            abs_tol=abs_tol,
+            rel_tol=rel_tol,
+            metrics=metrics,
+        )
         written: dict[str, Path] = {}
         if comparison_html is not None:
             comparison_path = Path(comparison_html)
-            self.comparison_report.to_file(comparison_path)
+            comparison_report = self.to_comparison_report(
+                abs_tol=abs_tol,
+                rel_tol=rel_tol,
+                metrics=metrics,
+                description_status_labels=description_status_labels,
+                prefix_same=prefix_same,
+                prefix_different=prefix_different,
+            )
+            self._write_report_html_with_footer(comparison_report, comparison_path, footer_note)
             written["comparison_html"] = comparison_path
         if diff_html is not None:
             diff_path = Path(diff_html)
-            diff_report = self.to_diff_report(abs_tol=abs_tol, rel_tol=rel_tol, metrics=metrics)
-            diff_report.to_file(diff_path)
+            diff_report = self.to_diff_report(
+                abs_tol=abs_tol,
+                rel_tol=rel_tol,
+                metrics=metrics,
+                description_status_labels=description_status_labels,
+                prefix_same=prefix_same,
+                prefix_different=prefix_different,
+            )
+            self._write_report_html_with_footer(diff_report, diff_path, footer_note)
             written["diff_html"] = diff_path
         if differences_yaml is not None:
             yaml_path = Path(differences_yaml)
