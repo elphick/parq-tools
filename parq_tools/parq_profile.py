@@ -252,6 +252,14 @@ class ParquetProfileComparisonBundle:
             return html.replace("</body>", f"{footer_block}</body>", 1)
         return f"{html}{footer_block}"
 
+    @staticmethod
+    def _format_comparison_title(labels: List[str]) -> str:
+        if len(labels) == 1:
+            return labels[0]
+        if len(labels) == 2:
+            return f"Comparing {labels[0]} and {labels[1]}"
+        return f"Comparing {', '.join(labels[:-1])} and {labels[-1]}"
+
     @classmethod
     def _write_report_html_with_footer(
         cls,
@@ -323,12 +331,14 @@ class ParquetProfileComparisonBundle:
         compare_reports = get_data_profile_compare("ParquetProfileComparisonBundle.to_diff_report()")
         summary = self.to_summary_dict(abs_tol=abs_tol, rel_tol=rel_tol, metrics=metrics)
         changed_columns = get_changed_columns_from_summary(summary)
-        if not changed_columns:
-            changed_columns = list(self.dataset_descriptions[0].variables.keys())
         pruned_descriptions = [
             prune_description_to_columns(desc, changed_columns) for desc in self.dataset_descriptions
         ]
         report = compare_reports(pruned_descriptions)
+        if not changed_columns:
+            comparison_title = self._format_comparison_title(self.labels)
+            report.config.title = comparison_title
+            report._description_set.analysis.title = comparison_title
         return self._apply_description_status_prefixes(
             report=report,
             summary=summary,
