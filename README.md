@@ -22,4 +22,5 @@ If your datasets are not large, you might find the `pandas` library more conveni
 - [x] **Concatenation** → Combines multiple Parquet files efficiently along rows (`axis=0`) or columns (`axis=1`).
 - [x] **Tokenized Filtering** → Converts **pandas-style expressions** into efficient PyArrow queries.
 - [x] **Profiling Enhancements** → Improves `fg-data-profiling` by profiling **specific columns incrementally**, merging results for large files.
+- [x] **Comparison Workflows** → Supports strict value-level parquet comparison (`parq_compare`) and profile-statistics comparison/reporting (`parq_profile`).
 - [x] **DataFrame Enhancements** → Provides a `LazyParquetDataFrame` class that extends `pandas.DataFrame` with lazy loading from Parquet files.

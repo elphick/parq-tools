@@ -33,3 +33,15 @@ def get_data_profile_compare(feature: str = "profile comparison"):
             f"Install it with 'pip install fg-data-profiling' to use {feature}."
         ) from exc
     return compare
+
+
+def get_yaml_module(feature: str = "yaml export"):
+    """Lazily import and return the yaml module."""
+    try:
+        import yaml
+    except ImportError as exc:  # pragma: no cover - message checked in tests
+        raise ImportError(
+            "PyYAML is required for YAML export features in parq_tools. "
+            f"Install it with 'pip install pyyaml' to use {feature}."
+        ) from exc
+    return yaml

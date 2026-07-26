@@ -6,7 +6,12 @@ from importlib import metadata
 from .parq_concat import ParquetConcat, concat_parquet_files, concat_parquet_file_with_dataframe
 from .parq_filter import filter_parquet_file
 from .parq_schema_tools import rename_and_update_metadata
-from .parq_profile import ParquetProfileReport, compare_parquet_profiles
+from .parq_profile import (
+    ParquetProfileReport,
+    ParquetProfileComparisonBundle,
+    build_parquet_profile_comparison,
+    compare_parquet_profiles,
+)
 from .utils.index_utils import reindex_parquet, sort_parquet_file, validate_index_alignment
 from .lazy_parquet import LazyParquetDF
 from .utils.profile_utils import ColumnMetadata
