@@ -1,0 +1,6 @@
+parq\_tools.utils.optional\_imports.get\_tqdm
+=============================================
+
+.. currentmodule:: parq_tools.utils.optional_imports
+
+.. autofunction:: get_tqdm

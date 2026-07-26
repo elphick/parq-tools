@@ -1,0 +1,41 @@
+parq\_tools.utils.profile\_utils
+================================
+
+.. automodule:: parq_tools.utils.profile_utils
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      build_column_descriptions
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+   
+      BatchDescription
+      ColumnMetadata
+      ColumnarProfileReport
+      ProfileMetadata
+   
+   
+
+   
+   
+   
+
+
+

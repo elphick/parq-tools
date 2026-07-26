@@ -1,0 +1,6 @@
+parq\_tools.utils.optional\_imports.get\_data\_profile\_report
+==============================================================
+
+.. currentmodule:: parq_tools.utils.optional_imports
+
+.. autofunction:: get_data_profile_report

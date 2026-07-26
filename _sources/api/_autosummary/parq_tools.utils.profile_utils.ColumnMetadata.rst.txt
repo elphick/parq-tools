@@ -1,0 +1,36 @@
+parq\_tools.utils.profile\_utils.ColumnMetadata
+===============================================
+
+.. currentmodule:: parq_tools.utils.profile_utils
+
+.. autoclass:: ColumnMetadata
+   :members:
+   :special-members: __add__, __mul__
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ColumnMetadata.__init__
+      ~ColumnMetadata.from_dict
+      ~ColumnMetadata.from_value
+      ~ColumnMetadata.to_description_string
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ColumnMetadata.description
+      ~ColumnMetadata.source
+      ~ColumnMetadata.title
+      ~ColumnMetadata.units
+   
+   

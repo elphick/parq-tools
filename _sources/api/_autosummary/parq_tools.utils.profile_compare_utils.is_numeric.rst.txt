@@ -1,0 +1,6 @@
+parq\_tools.utils.profile\_compare\_utils.is\_numeric
+=====================================================
+
+.. currentmodule:: parq_tools.utils.profile_compare_utils
+
+.. autofunction:: is_numeric

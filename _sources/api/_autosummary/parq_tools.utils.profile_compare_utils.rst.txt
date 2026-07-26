@@ -1,0 +1,37 @@
+parq\_tools.utils.profile\_compare\_utils
+=========================================
+
+.. automodule:: parq_tools.utils.profile_compare_utils
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      build_column_summary
+      build_profile_comparison_summary
+      get_changed_columns_from_summary
+      is_numeric
+      normalize_for_export
+      prune_description_to_columns
+      within_tolerance
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

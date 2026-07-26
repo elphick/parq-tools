@@ -1,0 +1,6 @@
+parq\_tools.parq\_profile.parquet\_column\_generator
+====================================================
+
+.. currentmodule:: parq_tools.parq_profile
+
+.. autofunction:: parquet_column_generator

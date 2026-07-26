@@ -1,0 +1,28 @@
+parq\_tools.calculated\_columns.CalculatedParquetReader
+=======================================================
+
+.. currentmodule:: parq_tools.calculated_columns
+
+.. autoclass:: CalculatedParquetReader
+   :members:
+   :special-members: __add__, __mul__
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CalculatedParquetReader.__init__
+      ~CalculatedParquetReader.iter_chunks
+      ~CalculatedParquetReader.load
+      ~CalculatedParquetReader.read
+      ~CalculatedParquetReader.save
+   
+   
+
+   
+   
+   

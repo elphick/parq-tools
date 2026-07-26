@@ -1,0 +1,46 @@
+parq\_tools.lazy\_parquet.LazyParquetDataFrame
+==============================================
+
+.. currentmodule:: parq_tools.lazy_parquet
+
+.. autoclass:: LazyParquetDataFrame
+   :members:
+   :special-members: __add__, __mul__
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LazyParquetDataFrame.__init__
+      ~LazyParquetDataFrame.add_column
+      ~LazyParquetDataFrame.assign
+      ~LazyParquetDataFrame.drop
+      ~LazyParquetDataFrame.head
+      ~LazyParquetDataFrame.insert
+      ~LazyParquetDataFrame.iter_chunks
+      ~LazyParquetDataFrame.rename
+      ~LazyParquetDataFrame.reset_index
+      ~LazyParquetDataFrame.save
+      ~LazyParquetDataFrame.set_index
+      ~LazyParquetDataFrame.to_pandas
+      ~LazyParquetDataFrame.to_parquet
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~LazyParquetDataFrame.columns
+      ~LazyParquetDataFrame.dtypes
+      ~LazyParquetDataFrame.index
+      ~LazyParquetDataFrame.loc
+      ~LazyParquetDataFrame.shape
+   
+   

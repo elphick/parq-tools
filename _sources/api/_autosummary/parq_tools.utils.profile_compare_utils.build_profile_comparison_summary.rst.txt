@@ -1,0 +1,6 @@
+parq\_tools.utils.profile\_compare\_utils.build\_profile\_comparison\_summary
+=============================================================================
+
+.. currentmodule:: parq_tools.utils.profile_compare_utils
+
+.. autofunction:: build_profile_comparison_summary

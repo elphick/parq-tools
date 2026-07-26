@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>parq_tools.parq_profile &mdash; parq-tools  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery.css?v=61a4c737" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="../../_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=1a8b2067" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            parq-tools
+          </a>
+              <div class="version">
+                0.5.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../auto_examples/index.html">Example Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary/glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license/license.html">License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">parq-tools</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">parq_tools.parq_profile</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for parq_tools.parq_profile</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">parq_profile.py</span>
+
+<span class="sd">Utilities for profiling Parquet files and generating HTML reports using fg-data-profiling, with support for notebook and browser display.</span>
+
+<span class="sd">Main API:</span>
+
+<span class="sd">- ParquetProfileReport: Class for generating, saving, and displaying profile reports for Parquet files.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">html</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">html_lib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Iterable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.parquet</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pq</span>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">atomic_output_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.metadata_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_table_metadata</span><span class="p">,</span> <span class="n">get_column_metadata</span><span class="p">,</span> <span class="n">get_pandas_metadata</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.profile_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ColumnarProfileReport</span><span class="p">,</span>
+    <span class="n">ProfileMetadata</span><span class="p">,</span>
+    <span class="n">ColumnMetadata</span><span class="p">,</span>
+    <span class="n">build_column_descriptions</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.optional_imports</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">get_data_profile_report</span><span class="p">,</span>
+    <span class="n">get_data_profile_compare</span><span class="p">,</span>
+    <span class="n">get_yaml_module</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">parq_tools.utils.profile_compare_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DEFAULT_COMPARISON_METRICS</span><span class="p">,</span>
+    <span class="n">build_profile_comparison_summary</span><span class="p">,</span>
+    <span class="n">get_changed_columns_from_summary</span><span class="p">,</span>
+    <span class="n">prune_description_to_columns</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="parquet_column_generator">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.parquet_column_generator.html#parq_tools.parq_profile.parquet_column_generator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parquet_column_generator</span><span class="p">(</span><span class="n">parquet_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
+                             <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Yields columns from a Parquet file as pandas Series.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parquet_path (str or Path): Path to the Parquet file.</span>
+<span class="sd">        columns (List[str], optional): List of column names to yield. If None, yields all columns.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        pd.Series: Each column as a pandas Series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pq_file</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">parquet_path</span><span class="p">))</span>
+    <span class="n">pandas_metadata</span> <span class="o">=</span> <span class="n">get_pandas_metadata</span><span class="p">(</span><span class="n">pq_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pandas_metadata</span><span class="p">:</span>
+        <span class="n">index_columns</span> <span class="o">=</span> <span class="n">pandas_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;index_columns&#39;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">index_columns</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">all_columns</span> <span class="o">=</span> <span class="n">columns</span> <span class="ow">or</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">all_columns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; not found in Parquet file.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">index_columns</span><span class="p">:</span>
+            <span class="n">series</span> <span class="o">=</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">col</span><span class="p">])</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()[</span><span class="n">col</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">series</span> <span class="o">=</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">col</span><span class="p">])</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()[</span><span class="n">col</span><span class="p">]</span>
+        <span class="k">yield</span> <span class="n">series</span></div>
+
+
+
+<div class="viewcode-block" id="ParquetProfileReport">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParquetProfileReport</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;For ydata-profiler reports on large parquet files.</span>
+
+<span class="sd">    Useful for profiling large Parquet files without loading them entirely into memory.</span>
+<span class="sd">    This class supports both native profiling (without chunking) and columnar profiling (with chunking).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ParquetProfileReport.__init__">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">parquet_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
+                 <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>  <span class="c1"># Number of columns to process in each batch</span>
+                 <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Parquet Profile Report&quot;</span><span class="p">,</span>
+                 <span class="n">dataset_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">ProfileMetadata</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">column_descriptions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+                     <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">ColumnMetadata</span><span class="p">]]</span>
+                 <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the ParquetProfileReport.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parquet_path: Path to the Parquet file to profile.</span>
+<span class="sd">            columns: List of column names to include in the profile. If None, all columns are used.</span>
+<span class="sd">            batch_size: Optional[int]: Number of columns to process in each batch. If None,</span>
+<span class="sd">             processes all columns at once.</span>
+<span class="sd">            show_progress: bool: If True, displays a progress bar during profiling.</span>
+<span class="sd">            title: Title of the report.</span>
+<span class="sd">            dataset_metadata: Optional[Union[dict, ProfileMetadata]]: Metadata for the dataset.  Will over-ride any</span>
+<span class="sd">                metadata in the Parquet file.</span>
+<span class="sd">            column_descriptions: Optional[dict[str, Union[str, Mapping[str, Any], ColumnMetadata]]]:</span>
+<span class="sd">                Column metadata/description values for the dataset. Supports legacy strings and structured</span>
+<span class="sd">                metadata payloads. Will over-ride any descriptions in the Parquet file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parquet_path</span> <span class="o">=</span> <span class="n">parquet_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span> <span class="o">=</span> <span class="n">show_progress</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">metadata</span> <span class="o">=</span> <span class="n">dataset_metadata</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset_metadata</span><span class="p">,</span> <span class="n">ProfileMetadata</span><span class="p">)</span> <span class="k">else</span> <span class="n">ProfileMetadata</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
+            <span class="n">dataset_metadata</span><span class="p">)</span> <span class="k">if</span> <span class="n">dataset_metadata</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">metadata</span>
+        <span class="n">pq_file</span> <span class="o">=</span> <span class="n">pq</span><span class="o">.</span><span class="n">ParquetFile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parquet_path</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span> <span class="k">if</span> <span class="n">columns</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">columns</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span><span class="p">:</span>
+            <span class="c1"># If no metadata is provided, use the Parquet file metadata</span>
+            <span class="n">table_meta</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">get_table_metadata</span><span class="p">(</span><span class="n">pq_file</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span> <span class="o">=</span> <span class="n">ProfileMetadata</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">table_meta</span><span class="p">)</span> <span class="k">if</span> <span class="n">pq_file</span><span class="o">.</span><span class="n">metadata</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">column_descriptions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># If no column descriptions are provided, use the Parquet file metadata</span>
+            <span class="n">column_descriptions</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">col</span><span class="p">:</span> <span class="n">desc</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">desc</span> <span class="ow">in</span> <span class="n">get_column_metadata</span><span class="p">(</span><span class="n">pq_file</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">column_descriptions</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">col</span><span class="p">:</span> <span class="n">desc</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">desc</span> <span class="ow">in</span> <span class="n">column_descriptions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span>
+            <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">column_descriptions</span> <span class="o">=</span> <span class="n">build_column_descriptions</span><span class="p">(</span><span class="n">column_descriptions</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ParquetProfileReport.profile">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.profile">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">profile</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ParquetProfileReport&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Profiles the Parquet file.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Native ydata profiling (no chunking)</span>
+            <span class="n">ProfileReport</span> <span class="o">=</span> <span class="n">get_data_profile_report</span><span class="p">(</span><span class="s2">&quot;ParquetProfileReport.profile()&quot;</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parquet_path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="n">dataset_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span> <span class="k">else</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="o">=</span> <span class="n">ProfileReport</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">minimal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">explorative</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">dataset</span><span class="o">=</span><span class="n">dataset_config</span><span class="p">,</span>
+                                        <span class="n">variables</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;descriptions&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">column_descriptions</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Columnar profiling</span>
+            <span class="n">gen</span> <span class="o">=</span> <span class="n">parquet_column_generator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parquet_path</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+            <span class="n">report</span> <span class="o">=</span> <span class="n">ColumnarProfileReport</span><span class="p">(</span>
+                <span class="n">column_generator</span><span class="o">=</span><span class="n">gen</span><span class="p">,</span>
+                <span class="n">column_count</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span>
+                <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span><span class="p">,</span>
+                <span class="n">title</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+                <span class="n">dataset_metadata</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_metadata</span><span class="p">,</span>
+                <span class="n">column_descriptions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">column_descriptions</span><span class="p">)</span>
+            <span class="n">report</span><span class="o">.</span><span class="n">profile</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">report</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="ParquetProfileReport.to_html">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.to_html">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_html</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The HTML representation of the profile report.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No report generated. Call profile() first.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ParquetProfileReport.save_html">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.save_html">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_html</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_html</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Save the profile report to a HTML file.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_html</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_path</span><span class="p">:</span>
+            <span class="n">tmp_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_html</span><span class="p">(),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ParquetProfileReport.to_file">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.to_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_file</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the profile report to an HTML file (data_profiling-compatible name).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_html</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_file</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ParquetProfileReport.show">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileReport.html#parq_tools.parq_profile.ParquetProfileReport.show">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">notebook</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Display the profile report in a notebook or open in a browser.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            notebook (bool): If True, display in Jupyter notebook. If False, open in browser.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">notebook</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">to_notebook_iframe</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span><span class="o">,</span><span class="w"> </span><span class="nn">webbrowser</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s2">&quot;.html&quot;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">tmp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+            <span class="n">tmp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">webbrowser</span><span class="o">.</span><span class="n">open_new_tab</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;file://</span><span class="si">{</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ParquetProfileComparisonBundle">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.ParquetProfileComparisonBundle.html#parq_tools.parq_profile.ParquetProfileComparisonBundle">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParquetProfileComparisonBundle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reusable outputs from one parquet profile-comparison run.&quot;&quot;&quot;</span>
+
+    <span class="n">comparison_report</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">dataset_descriptions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_description_status_labels</span><span class="p">(</span><span class="n">description_status_labels</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">description_status_labels</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="s2">&quot;emoji&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;description_status_labels must be &#39;none&#39; or &#39;emoji&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_description_status_prefixes</span><span class="p">(</span>
+        <span class="n">report</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">summary</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">description_status_labels</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">prefix_same</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">prefix_different</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">description_status_labels</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">report</span>
+
+        <span class="n">report_copy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+        <span class="n">descriptions</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">report_copy</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="s2">&quot;descriptions&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">descriptions</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">report_copy</span>
+
+        <span class="n">report_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">report_copy</span><span class="o">.</span><span class="n">get_description</span><span class="p">()</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">column_name</span> <span class="ow">in</span> <span class="n">report_columns</span><span class="p">:</span>
+            <span class="n">current_text</span> <span class="o">=</span> <span class="n">descriptions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">column_name</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">column_summary</span> <span class="o">=</span> <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;columns&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">column_name</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="n">column_summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix_different</span> <span class="k">if</span> <span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;equal&quot;</span> <span class="k">else</span> <span class="n">prefix_same</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">current_text</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">current_text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+                <span class="n">descriptions</span><span class="p">[</span><span class="n">column_name</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">current_text</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">descriptions</span><span class="p">[</span><span class="n">column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">prefix</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">report_copy</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_tolerance_footer_note</span><span class="p">(</span>
+        <span class="n">abs_tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">rel_tol</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">metric_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span> <span class="k">if</span> <span class="n">metrics</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">DEFAULT_COMPARISON_METRICS</span><span class="p">)</span>
+        <span class="n">metric_text</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">metric_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Comparison tolerance settings: abs_tol=</span><span class="si">{</span><span class="n">abs_tol</span><span class="si">}</span><span class="s2">, rel_tol=</span><span class="si">{</span><span class="n">rel_tol</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;metrics=[</span><span class="si">{</span><span class="n">metric_text</span><span class="si">}</span><span class="s2">]&quot;</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_append_footer_note</span><span class="p">(</span><span class="n">html</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">note</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">escaped_note</span> <span class="o">=</span> <span class="n">html_lib</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+        <span class="n">footer_block</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;&lt;div style=</span><span class="se">\&quot;</span><span class="s2">margin:12px 24px 24px 24px;font-size:12px;color:#666;</span><span class="se">\&quot;</span><span class="s2">&gt;&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">escaped_note</span><span class="si">}</span><span class="s2">&lt;/div&gt;&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;&lt;/body&gt;&quot;</span> <span class="ow">in</span> <span class="n">html</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;/body&gt;&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">footer_block</span><span class="si">}</span><span class="s2">&lt;/body&gt;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">html</span><span class="si">}{</span><span class="n">footer_block</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_report_html_with_footer</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">report</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">output_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">footer_note</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">html</span> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span>
+        <span class="n">html</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_append_footer_note</span><span class="p">(</span><span class="n">html</span><span class="p">,</span> <span class="n">footer_note</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_path</span><span class="p">:</span>
+            <span class="n">tmp_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">html</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_summary_dict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">abs_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">rel_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">build_profile_comparison_summary</span><span class="p">(</span>
+            <span class="n">descriptions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_descriptions</span><span class="p">,</span>
+            <span class="n">labels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span>
+            <span class="n">abs_tol</span><span class="o">=</span><span class="n">abs_tol</span><span class="p">,</span>
+            <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">,</span>
+            <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_summary_json</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">abs_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">rel_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">indent</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_summary_dict</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=</span><span class="n">abs_tol</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_path</span><span class="p">:</span>
+                <span class="n">tmp_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">text</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_summary_yaml</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">abs_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">rel_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">yaml</span> <span class="o">=</span> <span class="n">get_yaml_module</span><span class="p">(</span><span class="s2">&quot;ParquetProfileComparisonBundle.to_summary_yaml()&quot;</span><span class="p">)</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_summary_dict</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=</span><span class="n">abs_tol</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_dump</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">atomic_output_file</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_path</span><span class="p">:</span>
+                <span class="n">tmp_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">text</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_diff_report</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">abs_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">rel_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">description_status_labels</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+        <span class="n">prefix_same</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;🟢 SAME | &quot;</span><span class="p">,</span>
+        <span class="n">prefix_different</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;🔴 DIFF | &quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_description_status_labels</span><span class="p">(</span><span class="n">description_status_labels</span><span class="p">)</span>
+        <span class="n">compare_reports</span> <span class="o">=</span> <span class="n">get_data_profile_compare</span><span class="p">(</span><span class="s2">&quot;ParquetProfileComparisonBundle.to_diff_report()&quot;</span><span class="p">)</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_summary_dict</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=</span><span class="n">abs_tol</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="n">changed_columns</span> <span class="o">=</span> <span class="n">get_changed_columns_from_summary</span><span class="p">(</span><span class="n">summary</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">changed_columns</span><span class="p">:</span>
+            <span class="n">changed_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_descriptions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">pruned_descriptions</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">prune_description_to_columns</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">changed_columns</span><span class="p">)</span> <span class="k">for</span> <span class="n">desc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_descriptions</span>
+        <span class="p">]</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="n">compare_reports</span><span class="p">(</span><span class="n">pruned_descriptions</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_description_status_prefixes</span><span class="p">(</span>
+            <span class="n">report</span><span class="o">=</span><span class="n">report</span><span class="p">,</span>
+            <span class="n">summary</span><span class="o">=</span><span class="n">summary</span><span class="p">,</span>
+            <span class="n">description_status_labels</span><span class="o">=</span><span class="n">description_status_labels</span><span class="p">,</span>
+            <span class="n">prefix_same</span><span class="o">=</span><span class="n">prefix_same</span><span class="p">,</span>
+            <span class="n">prefix_different</span><span class="o">=</span><span class="n">prefix_different</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_comparison_report</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">abs_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">rel_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">description_status_labels</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+        <span class="n">prefix_same</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;🟢 SAME | &quot;</span><span class="p">,</span>
+        <span class="n">prefix_different</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;🔴 DIFF | &quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_description_status_labels</span><span class="p">(</span><span class="n">description_status_labels</span><span class="p">)</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_summary_dict</span><span class="p">(</span><span class="n">abs_tol</span><span class="o">=</span><span class="n">abs_tol</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_description_status_prefixes</span><span class="p">(</span>
+            <span class="n">report</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comparison_report</span><span class="p">,</span>
+            <span class="n">summary</span><span class="o">=</span><span class="n">summary</span><span class="p">,</span>
+            <span class="n">description_status_labels</span><span class="o">=</span><span class="n">description_status_labels</span><span class="p">,</span>
+            <span class="n">prefix_same</span><span class="o">=</span><span class="n">prefix_same</span><span class="p">,</span>
+            <span class="n">prefix_different</span><span class="o">=</span><span class="n">prefix_different</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_outputs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">comparison_html</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">diff_html</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">differences_yaml</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">abs_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">rel_tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">description_status_labels</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+        <span class="n">prefix_same</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;🟢 SAME | &quot;</span><span class="p">,</span>
+        <span class="n">prefix_different</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;🔴 DIFF | &quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_description_status_labels</span><span class="p">(</span><span class="n">description_status_labels</span><span class="p">)</span>
+        <span class="n">footer_note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tolerance_footer_note</span><span class="p">(</span>
+            <span class="n">abs_tol</span><span class="o">=</span><span class="n">abs_tol</span><span class="p">,</span>
+            <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">,</span>
+            <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">written</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">comparison_html</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">comparison_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">comparison_html</span><span class="p">)</span>
+            <span class="n">comparison_report</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_comparison_report</span><span class="p">(</span>
+                <span class="n">abs_tol</span><span class="o">=</span><span class="n">abs_tol</span><span class="p">,</span>
+                <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">,</span>
+                <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span>
+                <span class="n">description_status_labels</span><span class="o">=</span><span class="n">description_status_labels</span><span class="p">,</span>
+                <span class="n">prefix_same</span><span class="o">=</span><span class="n">prefix_same</span><span class="p">,</span>
+                <span class="n">prefix_different</span><span class="o">=</span><span class="n">prefix_different</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_report_html_with_footer</span><span class="p">(</span><span class="n">comparison_report</span><span class="p">,</span> <span class="n">comparison_path</span><span class="p">,</span> <span class="n">footer_note</span><span class="p">)</span>
+            <span class="n">written</span><span class="p">[</span><span class="s2">&quot;comparison_html&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">comparison_path</span>
+        <span class="k">if</span> <span class="n">diff_html</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">diff_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">diff_html</span><span class="p">)</span>
+            <span class="n">diff_report</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_diff_report</span><span class="p">(</span>
+                <span class="n">abs_tol</span><span class="o">=</span><span class="n">abs_tol</span><span class="p">,</span>
+                <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">,</span>
+                <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">,</span>
+                <span class="n">description_status_labels</span><span class="o">=</span><span class="n">description_status_labels</span><span class="p">,</span>
+                <span class="n">prefix_same</span><span class="o">=</span><span class="n">prefix_same</span><span class="p">,</span>
+                <span class="n">prefix_different</span><span class="o">=</span><span class="n">prefix_different</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_report_html_with_footer</span><span class="p">(</span><span class="n">diff_report</span><span class="p">,</span> <span class="n">diff_path</span><span class="p">,</span> <span class="n">footer_note</span><span class="p">)</span>
+            <span class="n">written</span><span class="p">[</span><span class="s2">&quot;diff_html&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">diff_path</span>
+        <span class="k">if</span> <span class="n">differences_yaml</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">yaml_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">differences_yaml</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">to_summary_yaml</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">yaml_path</span><span class="p">,</span> <span class="n">abs_tol</span><span class="o">=</span><span class="n">abs_tol</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="n">rel_tol</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+            <span class="n">written</span><span class="p">[</span><span class="s2">&quot;differences_yaml&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">yaml_path</span>
+        <span class="k">return</span> <span class="n">written</span></div>
+
+
+
+<div class="viewcode-block" id="build_parquet_profile_comparison">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.build_parquet_profile_comparison.html#parq_tools.parq_profile.build_parquet_profile_comparison">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_parquet_profile_comparison</span><span class="p">(</span>
+    <span class="n">parquet_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]],</span>
+    <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">titles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dataset_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">ProfileMetadata</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">column_descriptions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">ColumnMetadata</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParquetProfileComparisonBundle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare 2 or 3 parquet files using profiling reports.</span>
+
+<span class="sd">    Uses memory-managed columnar profiling when ``batch_size`` is an integer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parquet_paths</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">file_count</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;parquet_paths must contain exactly 2 or 3 file paths.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">titles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">titles</span><span class="p">)</span> <span class="o">!=</span> <span class="n">file_count</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;titles must have the same length as parquet_paths.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dataset_metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset_metadata</span><span class="p">)</span> <span class="o">!=</span> <span class="n">file_count</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dataset_metadata must have the same length as parquet_paths.&quot;</span><span class="p">)</span>
+
+    <span class="n">metadata_list</span> <span class="o">=</span> <span class="n">dataset_metadata</span> <span class="k">if</span> <span class="n">dataset_metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">file_count</span>
+    <span class="n">compare_reports</span> <span class="o">=</span> <span class="n">get_data_profile_compare</span><span class="p">(</span><span class="s2">&quot;compare_parquet_profiles()&quot;</span><span class="p">)</span>
+
+    <span class="n">reports</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">parquet_path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parquet_paths</span><span class="p">):</span>
+        <span class="n">report_title</span> <span class="o">=</span> <span class="n">titles</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">if</span> <span class="n">titles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;Dataset </span><span class="si">{</span><span class="nb">chr</span><span class="p">(</span><span class="mi">65</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">idx</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">report_title</span><span class="p">)</span>
+        <span class="n">profiler</span> <span class="o">=</span> <span class="n">ParquetProfileReport</span><span class="p">(</span>
+            <span class="n">parquet_path</span><span class="o">=</span><span class="n">parquet_path</span><span class="p">,</span>
+            <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">report_title</span><span class="p">,</span>
+            <span class="n">dataset_metadata</span><span class="o">=</span><span class="n">metadata_list</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+            <span class="n">column_descriptions</span><span class="o">=</span><span class="n">column_descriptions</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">profiler</span><span class="o">.</span><span class="n">profile</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">profiler</span><span class="o">.</span><span class="n">report</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No report generated for </span><span class="si">{</span><span class="n">parquet_path</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">reports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">profiler</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">get_description</span><span class="p">())</span>
+
+    <span class="n">comparison_report</span> <span class="o">=</span> <span class="n">compare_reports</span><span class="p">(</span><span class="n">reports</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ParquetProfileComparisonBundle</span><span class="p">(</span>
+        <span class="n">comparison_report</span><span class="o">=</span><span class="n">comparison_report</span><span class="p">,</span>
+        <span class="n">dataset_descriptions</span><span class="o">=</span><span class="n">reports</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compare_parquet_profiles">
+<a class="viewcode-back" href="../../api/_autosummary/parq_tools.parq_profile.compare_parquet_profiles.html#parq_tools.parq_profile.compare_parquet_profiles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compare_parquet_profiles</span><span class="p">(</span>
+    <span class="n">parquet_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]],</span>
+    <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">titles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dataset_metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">ProfileMetadata</span><span class="p">]]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">column_descriptions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">ColumnMetadata</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return only the merged comparison report for backward compatibility.&quot;&quot;&quot;</span>
+    <span class="n">bundle</span> <span class="o">=</span> <span class="n">build_parquet_profile_comparison</span><span class="p">(</span>
+        <span class="n">parquet_paths</span><span class="o">=</span><span class="n">parquet_paths</span><span class="p">,</span>
+        <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+        <span class="n">titles</span><span class="o">=</span><span class="n">titles</span><span class="p">,</span>
+        <span class="n">dataset_metadata</span><span class="o">=</span><span class="n">dataset_metadata</span><span class="p">,</span>
+        <span class="n">column_descriptions</span><span class="o">=</span><span class="n">column_descriptions</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">bundle</span><span class="o">.</span><span class="n">comparison_report</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025-2026, Greg Elphick.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

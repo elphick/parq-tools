@@ -1,0 +1,6 @@
+parq\_tools.utils.profile\_compare\_utils.get\_changed\_columns\_from\_summary
+==============================================================================
+
+.. currentmodule:: parq_tools.utils.profile_compare_utils
+
+.. autofunction:: get_changed_columns_from_summary

@@ -1,0 +1,6 @@
+parq\_tools.parq\_profile.build\_parquet\_profile\_comparison
+=============================================================
+
+.. currentmodule:: parq_tools.parq_profile
+
+.. autofunction:: build_parquet_profile_comparison
