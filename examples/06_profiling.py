@@ -15,7 +15,7 @@ import tempfile
 import pandas as pd
 from pathlib import Path
 
-from parq_tools import ParquetProfileReport, ColumnMetadata, compare_parquet_profiles
+from parq_tools import ParquetProfileReport, ColumnMetadata, build_parquet_profile_comparison
 
 # %%
 # Create a Parquet file for profiling
@@ -31,6 +31,7 @@ df = pd.DataFrame({
     "col1": range(100),
     "col2": ["a"] * 100,
     "col3": [True, False] * 50,
+    "col4": [1] * 100,  # unchanged across all datasets; should be dropped from diff report
 })
 parquet_path = temp_dir / "example.parquet"
 df.to_parquet(parquet_path)
@@ -98,15 +99,17 @@ pd.DataFrame({
     "col1": range(100),
     "col2": ["a"] * 99 + ["b"],
     "col3": [True, False] * 50,
+    "col4": [1] * 100,
 }).to_parquet(parquet_path_b)
 
 pd.DataFrame({
     "col1": range(1, 101),
     "col2": ["a"] * 100,
     "col3": [True] * 100,
+    "col4": [1] * 100,
 }).to_parquet(parquet_path_c)
 
-comparison = compare_parquet_profiles(
+comparison_bundle = build_parquet_profile_comparison(
     parquet_paths=[parquet_path, parquet_path_b, parquet_path_c],  # 2 or 3 files supported
     batch_size=1,  # memory-managed profile generation
     show_progress=True,
@@ -118,10 +121,25 @@ comparison = compare_parquet_profiles(
     ],
     column_descriptions=shared_column_descriptions,
 )
-comparison_output = temp_dir / "comparison_profile_report.html"
-comparison.to_file(comparison_output)
-comparison_html = comparison_output.read_text(encoding="utf-8")
+written = comparison_bundle.write_outputs(
+    comparison_html=temp_dir / "comparison_profile_report.html",
+    diff_html=temp_dir / "comparison_profile_report_diff.html",
+    differences_yaml=temp_dir / "comparison_differences.yaml",
+    abs_tol=0.01,
+    rel_tol=0.001,
+    description_status_labels="emoji",  # prefixes descriptions with 🟢 SAME | / 🔴 DIFF |
+)
+summary = comparison_bundle.to_summary_dict(abs_tol=0.01, rel_tol=0.001)
+assert summary["columns"]["col4"]["status"] == "equal"
+
+diff_report = comparison_bundle.to_diff_report(abs_tol=0.01, rel_tol=0.001)
+diff_columns = set(diff_report.get_description().variables.keys())
+assert "col4" not in diff_columns
+assert diff_columns.issubset({"col1", "col2", "col3"})
+
+comparison_html = written["comparison_html"].read_text(encoding="utf-8")
 assert "Primary quantity used to validate description rendering" in comparison_html
 
 import webbrowser
-webbrowser.open_new_tab(f"file://{comparison_output}")
+webbrowser.open_new_tab(f"file://{written['comparison_html']}")
+webbrowser.open_new_tab(f"file://{written['diff_html']}")

@@ -1,5 +1,14 @@
-import pyarrow.parquet as pq
 import hashlib
+import pyarrow.parquet as pq
+
+"""Strict parquet content comparison utilities.
+
+This module performs value-level comparison by hashing row batches per column.
+Use this when you need strict equality checks.
+
+For statistics-driven profile comparison outputs (HTML compare reports, diff-only
+column reports, YAML summaries), use `parq_tools.parq_profile` comparison APIs.
+"""
 
 
 def hash_recordbatch(batch):
@@ -17,6 +26,7 @@ def compare_metadata(meta1, meta2):
     return meta1 == meta2
 
 def compare_parquet_files(file1, file2, chunk_size=10000, show_progress=False):
+    """Compare two parquet files for strict value-level equality."""
     result = {
         'metadata': False,
         'columns': {},
