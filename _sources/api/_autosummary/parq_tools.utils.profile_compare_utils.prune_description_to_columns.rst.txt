@@ -1,0 +1,6 @@
+parq\_tools.utils.profile\_compare\_utils.prune\_description\_to\_columns
+=========================================================================
+
+.. currentmodule:: parq_tools.utils.profile_compare_utils
+
+.. autofunction:: prune_description_to_columns

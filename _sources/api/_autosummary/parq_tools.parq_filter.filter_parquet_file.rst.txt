@@ -1,0 +1,6 @@
+parq\_tools.parq\_filter.filter\_parquet\_file
+==============================================
+
+.. currentmodule:: parq_tools.parq_filter
+
+.. autofunction:: filter_parquet_file

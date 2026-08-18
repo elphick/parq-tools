@@ -1,0 +1,33 @@
+parq\_tools.utils.hash\_utils
+=============================
+
+.. automodule:: parq_tools.utils.hash_utils
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      fast_file_check
+      file_hash
+      files_match
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

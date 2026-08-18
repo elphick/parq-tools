@@ -1,0 +1,6 @@
+parq\_tools.utils.file\_utils.check\_valid\_parquet
+===================================================
+
+.. currentmodule:: parq_tools.utils.file_utils
+
+.. autofunction:: check_valid_parquet

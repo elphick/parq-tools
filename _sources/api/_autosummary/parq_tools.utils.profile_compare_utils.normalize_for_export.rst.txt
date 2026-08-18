@@ -1,0 +1,6 @@
+parq\_tools.utils.profile\_compare\_utils.normalize\_for\_export
+================================================================
+
+.. currentmodule:: parq_tools.utils.profile_compare_utils
+
+.. autofunction:: normalize_for_export

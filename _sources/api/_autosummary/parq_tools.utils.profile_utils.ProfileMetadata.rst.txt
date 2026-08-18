@@ -1,0 +1,37 @@
+parq\_tools.utils.profile\_utils.ProfileMetadata
+================================================
+
+.. currentmodule:: parq_tools.utils.profile_utils
+
+.. autoclass:: ProfileMetadata
+   :members:
+   :special-members: __add__, __mul__
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ProfileMetadata.__init__
+      ~ProfileMetadata.from_dict
+      ~ProfileMetadata.to_dict
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ProfileMetadata.author
+      ~ProfileMetadata.copyright_holder
+      ~ProfileMetadata.copyright_year
+      ~ProfileMetadata.creator
+      ~ProfileMetadata.description
+      ~ProfileMetadata.url
+   
+   

@@ -1,0 +1,6 @@
+parq\_tools.utils.progress.get\_batch\_progress\_bar
+====================================================
+
+.. currentmodule:: parq_tools.utils.progress
+
+.. autofunction:: get_batch_progress_bar

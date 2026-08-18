@@ -1,0 +1,33 @@
+﻿parq\_tools.parq\_compare
+=========================
+
+.. automodule:: parq_tools.parq_compare
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      compare_metadata
+      compare_parquet_files
+      hash_recordbatch
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
