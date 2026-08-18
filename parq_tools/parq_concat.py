@@ -29,13 +29,7 @@ from parq_tools.utils.index_utils import validate_index_alignment
 # noinspection PyProtectedMember
 from parq_tools.utils._query_parser import build_filter_expression, get_filter_parser, get_referenced_columns
 
-try:
-    # noinspection PyUnresolvedReferences
-    from tqdm import tqdm
-
-    HAS_TQDM = True
-except ImportError:
-    HAS_TQDM = False
+from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -59,7 +53,7 @@ def concat_parquet_files(files: List[Path],
         filter_query (Optional[str]): Filter expression to apply to the concatenated data.
         columns (Optional[List[str]]): List of columns to include in the output.
         batch_size (int): Number of rows per batch to process. Defaults to 100_00.
-        show_progress (bool): If True, displays a progress bar using `tqdm` (if installed).
+        show_progress (bool): If True, displays a progress bar using `tqdm`.
 
     Raises:
         ValueError: If the input files list is empty or if any file is not accessible.
@@ -106,7 +100,7 @@ def concat_parquet_file_with_dataframe(
         If ``True``, allow replacing an existing output file, including the
         source file when rewriting in place.
     show_progress:
-        If ``True``, display a progress bar if ``tqdm`` is available.
+        If ``True``, display a progress bar.
     **pq_write_kwargs:
         Extra keyword arguments forwarded to ``pyarrow.parquet.ParquetWriter``.
 
@@ -168,18 +162,11 @@ def concat_parquet_file_with_dataframe(
 
     df_indexed = df.set_index(list(index_columns), drop=False)
 
-    progress_bar = None
-    if show_progress:
-        try:
-            from tqdm import tqdm
-
-            progress_bar = tqdm(
-                total=source_pf.metadata.num_rows,
-                desc="Concatenating columns",
-                unit="row",
-            )
-        except ImportError:
-            progress_bar = None
+    progress_bar = tqdm(
+        total=source_pf.metadata.num_rows,
+        desc="Concatenating columns",
+        unit="row",
+    ) if show_progress else None
 
     try:
         with atomic_output_file(target_path) as tmp_file:
@@ -231,14 +218,14 @@ class ParquetConcat:
             files (List[Path]): List of Parquet files to concatenate.
             axis (int, optional): Concatenation axis (0 = row-wise, 1 = column-wise). Defaults to 0.
             index_columns (Optional[List[str]], optional): Index columns for sorting. Defaults to None.
-            show_progress (bool, optional): If True, enables tqdm progress bar (if installed). Defaults to False.
+            show_progress (bool, optional): If True, enables progress bar. Defaults to False.
         """
         if not files:
             raise ValueError("The list of input files cannot be empty.")
         self.files = files
         self.axis = axis
         self.index_columns = index_columns or []
-        self.show_progress = show_progress and HAS_TQDM  # Only enable progress if tqdm is available
+        self.show_progress = show_progress
         logging.info("Initializing ParquetConcat with %d files", len(files))
         self._validate_input_files()
 
@@ -316,7 +303,7 @@ class ParquetConcat:
             filter_query (Optional[str]): Filter expression to apply.
             columns (Optional[List[str]]): List of columns to include in the output.
             batch_size (int, optional): Number of rows per batch to process. Defaults to 1024.
-            show_progress (bool, optional): If True, displays a progress bar using `tqdm` (if installed). Defaults to False.
+            show_progress (bool, optional): If True, displays a progress bar. Defaults to False.
         """
         logging.info("Using low-memory iterative concatenation")
         datasets = [ds.dataset(file, format="parquet") for file in self.files]
@@ -414,7 +401,7 @@ class ParquetConcat:
                                 logging.info("Writing merged pandas metadata to output file.")
                             else:
                                 logging.info("No pandas metadata found in input files.")
-                            if show_progress and HAS_TQDM and progress_bar is None:
+                            if show_progress and progress_bar is None:
                                 total_batches = max(
                                     sum(fragment.metadata.num_row_groups for fragment in dataset.get_fragments())
                                     for dataset in datasets)
@@ -492,7 +479,7 @@ class ParquetConcat:
                                     logging.info("Writing merged pandas metadata to output file.")
                                 else:
                                     logging.info("No pandas metadata found in input files.")
-                                if show_progress and HAS_TQDM and progress_bar is None:
+                                if show_progress and progress_bar is None:
                                     progress_bar = tqdm(total=total_row_groups, desc="Processing batches", unit="batch")
                                 writer = pq.ParquetWriter(tmp_file, schema)
                             writer.write_table(table)

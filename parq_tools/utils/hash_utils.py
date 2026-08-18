@@ -2,16 +2,14 @@ import hashlib
 from pathlib import Path
 
 
+from tqdm import tqdm
+
+
 def file_hash(path: Path, hash_func=hashlib.sha256, chunk_size=1024 * 1024, show_progress=False) -> str:
     total = path.stat().st_size
     h = hash_func()
-    try:
-        from tqdm import tqdm
-        use_tqdm = show_progress
-    except ImportError:
-        use_tqdm = False
     with open(path, "rb") as f:
-        if use_tqdm:
+        if show_progress:
             with tqdm(total=total, unit="B", unit_scale=True, desc=f"Hashing {path.name}") as pbar:
                 for chunk in iter(lambda: f.read(chunk_size), b""):
                     h.update(chunk)

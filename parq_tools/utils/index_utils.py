@@ -6,9 +6,9 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
+from tqdm import tqdm
 
 from parq_tools.utils import atomic_output_file
-from parq_tools.utils.optional_imports import get_tqdm
 from parq_tools.utils.progress import get_batch_progress_bar
 
 
@@ -185,7 +185,6 @@ def dedup_index_parquet(
     schema = pa.Table.from_batches([first_batch]).schema
 
     with atomic_output_file(output_path) as tmp_file, pq.ParquetWriter(tmp_file, schema=schema) as writer:
-        tqdm = get_tqdm()
         pbar = tqdm(total=None, desc="Deduplicating index")
         for batch in dataset.to_batches(batch_size=chunk_size):
             table = pa.Table.from_batches([batch])

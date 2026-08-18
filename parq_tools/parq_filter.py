@@ -22,13 +22,7 @@ from parq_tools.utils._query_parser import build_filter_expression
 import pyarrow as pa
 from typing import List, Optional
 
-try:
-    # noinspection PyUnresolvedReferences
-    from tqdm import tqdm
-
-    HAS_TQDM = True
-except ImportError:
-    HAS_TQDM = False
+from tqdm import tqdm
 
 
 def filter_parquet_file(input_path: Path,
@@ -57,7 +51,7 @@ def filter_parquet_file(input_path: Path,
                               batch_size=chunk_size)
 
     total_rows = dataset.count_rows()
-    progress = tqdm(total=total_rows, desc="Filtering", unit="rows") if HAS_TQDM and show_progress else None
+    progress = tqdm(total=total_rows, desc="Filtering", unit="rows") if show_progress else None
 
     # Get schema from the first batch
     batches = scanner.to_batches()

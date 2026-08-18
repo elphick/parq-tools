@@ -19,12 +19,7 @@ from typing import Optional
 
 from parq_tools.utils import atomic_output_file
 
-try:
-    from tqdm import tqdm
-
-    HAS_TQDM = True
-except ImportError:
-    HAS_TQDM = False
+from tqdm import tqdm
 
 
 def rename_and_update_metadata(
@@ -55,7 +50,7 @@ def rename_and_update_metadata(
     columns = dataset.schema.names if return_all_columns else list(rename_map.keys())
     scanner = dataset.scanner(columns=columns, batch_size=chunk_size)
     total_rows = dataset.count_rows()
-    progress = tqdm(total=total_rows, desc="Processing", unit="rows") if HAS_TQDM and show_progress else None
+    progress = tqdm(total=total_rows, desc="Processing", unit="rows") if show_progress else None
 
     batches = scanner.to_batches()
     total_written = 0

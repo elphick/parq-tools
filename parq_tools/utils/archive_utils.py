@@ -4,9 +4,9 @@ from pathlib import Path
 import sys
 import subprocess
 import time
+from tqdm import tqdm
 
 from parq_tools.utils import atomic_output_dir
-from parq_tools.utils.optional_imports import get_tqdm
 
 
 def extract_archive(archive_path: Path,
@@ -22,8 +22,6 @@ def extract_archive(archive_path: Path,
 
     """
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    tqdm = get_tqdm()
 
     # Attempt extraction with zipfile
     try:
@@ -66,8 +64,6 @@ def extract_archive_with_7zip(archive_path: Path,
         show_progress (bool): Whether to display a progress bar. Defaults to False.
 
     """
-
-    tqdm = get_tqdm()
 
     seven_zip_path = shutil.which("7z")
     if not seven_zip_path:

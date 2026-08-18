@@ -2,8 +2,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Optional, Union
 import pandas as pd
+from tqdm import tqdm
 from parq_tools.utils import atomic_output_file
-from parq_tools.utils.optional_imports import get_tqdm, get_data_profile_report
+from parq_tools.utils.optional_imports import get_data_profile_report
 
 
 @dataclass
@@ -158,7 +159,6 @@ class ColumnarProfileReport:
         self.title = title
         self.metadata = dataset_metadata.to_dict() if dataset_metadata else {}
         self.column_descriptions = column_descriptions if column_descriptions else {}
-        self.tqdm = get_tqdm()
         # Delay ydata_profiling import until actually profiling
         self.head_report = None
         self.report = None
@@ -184,8 +184,8 @@ class ColumnarProfileReport:
                 yield batch
 
         total_progress_steps = total_columns + 1 if total_columns else None
-        progress = self.tqdm(total=total_progress_steps, desc="Profiling columns",
-                             leave=True) if self.show_progress else None
+        progress = tqdm(total=total_progress_steps, desc="Profiling columns",
+                         leave=True) if self.show_progress else None
 
         for batch in batched(self.column_generator, self.batch_size):
             batch_names = []
