@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import pyarrow.parquet as pq
 from typing import ContextManager, Union, Callable, Any
+from tqdm import tqdm
 
 from parq_tools.utils.hash_utils import files_match
 
@@ -106,16 +107,10 @@ def atomic_file_copy(
 
     total = src.stat().st_size
 
-    try:
-        from tqdm import tqdm
-        use_tqdm = True
-    except ImportError:
-        use_tqdm = False
-
     with atomic_output_file(dst) as tmp_dst:
         tmp_dst = Path(tmp_dst)
 
-        if show_progress and use_tqdm:
+        if show_progress:
             # Manual chunked copy with progress
             with open(src, "rb") as fsrc, open(tmp_dst, "wb") as fdst:
                 with tqdm(

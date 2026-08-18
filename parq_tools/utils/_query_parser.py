@@ -8,7 +8,7 @@ def get_filter_parser():
     """
     Returns a Lark parser for validating filter expressions, including 'in' for lists.
     """
-    grammar = """
+    grammar = r"""
     ?start: expr
     ?expr: expr "and" expr  -> and_expr
           | expr "or" expr   -> or_expr

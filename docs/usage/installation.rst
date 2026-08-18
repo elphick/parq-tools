@@ -12,11 +12,11 @@ The package is pip installable.
 
     pip install parq-tools
 
-If you want the extras (for visualisation and networks of objects) you'll install like this with pip.
+If you want the extras (for profiling and visualisation) you'll install like this with pip.
 
 .. code-block::
 
-    pip install parq-tools -e .[tqdm,profile]
+    pip install parq-tools[profiling,blockmodel]
 
 Or, if poetry is more your flavour.
 
@@ -28,4 +28,4 @@ or with extras...
 
 ..  code-block::
 
-    poetry add "parq-tools[tqdm,profile]"
+    poetry add "parq-tools[profiling,blockmodel]"

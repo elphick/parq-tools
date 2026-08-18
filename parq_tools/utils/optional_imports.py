@@ -1,13 +1,3 @@
-def get_tqdm():
-    try:
-        from tqdm import tqdm
-        return tqdm
-    except ImportError:
-        def dummy(iterable, *args, **kwargs):
-            return iterable
-        return dummy
-
-
 def get_data_profile_report(feature: str = "profiling"):
     """Lazily import and return data_profiling.ProfileReport.
 

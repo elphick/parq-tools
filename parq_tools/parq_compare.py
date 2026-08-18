@@ -1,5 +1,6 @@
 import hashlib
 import pyarrow.parquet as pq
+from tqdm import tqdm
 
 """Strict parquet content comparison utilities.
 
@@ -64,15 +65,7 @@ def compare_parquet_files(file1, file2, chunk_size=10000, show_progress=False):
     result['num_rows_match'] = pf1.metadata.num_rows == pf2.metadata.num_rows
 
 
-    try:
-        from tqdm import tqdm
-    except ImportError:
-        tqdm = None
-
-    if show_progress and tqdm is not None:
-        col_iter = tqdm(sorted(all_cols), desc="Comparing columns")
-    else:
-        col_iter = sorted(all_cols)
+    col_iter = tqdm(sorted(all_cols), desc="Comparing columns") if show_progress else sorted(all_cols)
 
     for col in col_iter:
         if col not in cols1 or col not in cols2:
