@@ -24,3 +24,24 @@ If your datasets are not large, you might find the `pandas` library more conveni
 - [x] **Profiling Enhancements** → Improves `fg-data-profiling` by profiling **specific columns incrementally**, merging results for large files.
 - [x] **Comparison Workflows** → Supports strict value-level parquet comparison (`parq_compare`) and profile-statistics comparison/reporting (`parq_profile`).
 - [x] **DataFrame Enhancements** → Provides a `LazyParquetDataFrame` class that extends `pandas.DataFrame` with lazy loading from Parquet files.
+
+## Development
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then run:
+
+```powershell
+uv sync --locked --all-extras
+uv run --locked --all-extras pytest
+```
+
+The project uses Python 3.13 locally (pinned in `.python-version`) and supports
+Python 3.11 through 3.13. uv creates a project-local `.venv` and downloads Python
+if needed; select `.venv\Scripts\python.exe` as your Windows IDE interpreter.
+Any existing Poetry environment is left unchanged.
+
+Dependencies are defined in `pyproject.toml` and locked in `uv.lock`. After
+changing dependencies, run `uv lock` and commit both files. Omit `--all-extras`
+to install only the core package and development dependencies.
+
+Build distributions with `uv build`, or build the documentation with
+`uv run --locked --all-extras sphinx-build docs _build`.
