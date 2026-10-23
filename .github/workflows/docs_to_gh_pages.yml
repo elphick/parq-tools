@@ -5,11 +5,19 @@ on:
       - 'examples/*.py'
       - 'docs/**'
       - 'README.md'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.python-version'
+      - '.github/workflows/docs_to_gh_pages.yml'
   pull_request:
     paths:
       - 'docs/**'
       - 'examples/*.py'
       - 'README.md'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.python-version'
+      - '.github/workflows/docs_to_gh_pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -19,26 +27,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.14"
+          python-version: "3.13"
+          enable-cache: true
 
       - name: Setup headless display
         uses: pyvista/setup-headless-display-action@v3
 
-      - name: Install poetry
-        run: |
-          pip install poetry==1.5.0
-
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.in-project true
-
       - name: Install dependencies
-        run: |
-          poetry install --all-extras --no-interaction
+        run: uv sync --locked --all-extras
 
       - name: Sphinx build
         run: |
-          poetry run sphinx-build docs _build
+          uv run --locked --all-extras sphinx-build docs _build
 
       - name: Deploy
         if: github.ref == 'refs/heads/main'

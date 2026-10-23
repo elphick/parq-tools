@@ -1,35 +1,36 @@
-[tool.poetry]
+[project]
 name = "parq-tools"
-version = "0.5.3"
+version = "0.5.4"
 description = "A collection of utilities for efficiently working with **large-scale** Parquet datasets."
-authors = ["Greg <11791585+elphick@users.noreply.github.com>"]
+authors = [{ name = "Greg", email = "11791585+elphick@users.noreply.github.com" }]
 readme = "README.md"
-packages = [{ include = "parq_tools" }]
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "pyarrow>=16.0",
+    "lark>=1.2.2,<2",
+    "tqdm>=4.67.1",
+    "pandas>=2.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.11,<3.14"
-pyarrow = ">=16.0"
-lark = "^1.2.2"
-tqdm = ">=4.67.1"
-#ydata-profiling = { version = ">=4.16.1", optional = true }
-fg-data-profiling = { version = "^4.19.1", optional = true }
-setuptools = { version = "<81", optional = true }  # sadly still needed by fg-data-profiling
-pyvista = { version = ">=0.45.2", optional = true }
-pandas = ">=2.0"
+[project.optional-dependencies]
+profiling = [
+    "fg-data-profiling>=4.19.1,<5",
+    "setuptools<81",  # Still needed by fg-data-profiling.
+]
+blockmodel = ["pyvista>=0.45.2"]
 
-[tool.poetry.extras]
-profiling = ["fg-data-profiling", "setuptools"]
-blockmodel = ["pyvista"]
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.2.1"
-sphinx = "^7.3.7"
-sphinx-gallery = "^0.16.0"
-sphinx-rtd-theme = "^2.0.0"
-myst-parser = "^3.0.1"
-sphinx-autodoc-typehints = "^2.1.1"
-matplotlib = "^3.7.2"
-coverage = "^7.8.0"
+[dependency-groups]
+dev = [
+    "pytest>=8.2.1,<9",
+    "sphinx>=7.3.7,<8",
+    "sphinx-gallery>=0.16.0,<0.17",
+    "sphinx-rtd-theme>=2.0.0,<3",
+    "myst-parser>=3.0.1,<4",
+    "sphinx-autodoc-typehints>=2.1.1,<3",
+    "matplotlib>=3.7.2,<4",
+    "coverage>=7.8.0,<8",
+    "coverage-badge>=1.1.2,<2",
+]
 
 
 [tool.pytest.ini_options]
@@ -41,5 +42,8 @@ markers = [
 
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling>=1.26,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["parq_tools"]
